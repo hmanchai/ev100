@@ -12,25 +12,18 @@ from pathlib import Path
 
 ## map files ##
 #lahaina
-# tdf_map_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\c_weicya\ev100\seed_files\map_files\lahaina\Lahaina_V2p1_TDF_mapping_sheet.csv"
-# int_saf_map_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\c_weicya\ev100\seed_files\map_files\lahaina\Lahaina_R2p1_ATPG_mapping.csv"
-#waipio
-int_saf_map_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\c_weicya\ev100\seed_files\map_files\waipio\waipio_v1_map_test_p1.csv"
+tdf_map_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\c_weicya\ev100\seed_files\map_files\lahaina\Lahaina_V2p1_TDF_mapping_sheet.csv"
+int_saf_map_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\c_weicya\ev100\seed_files\map_files\lahaina\Lahaina_R2p1_ATPG_mapping.csv"
 
 ## source path for patterns ##
 #lahaina
-# par_vector_path_r2 = r'\\qctdfsrt\prj\qct\chips\lahaina\sandiego\test\vcd\r2_sec5lpe\tester_vcd' #lahaina r2 common path
-# par_vector_path_r2p1 = r'\\qctdfsrt\prj\qct\chips\lahaina\sandiego\test\vcd\r2p1_sec5lpe\tester_vcd' #lahaina r2.1 common path
-#waipio
-par_vector_path_r1 = r'\\qctdfsrt\prj\qct\chips\waipio\sandiego\test\vcd\r1_sec5lpe\tester_vcd' #waipio r1 common path
+par_vector_path_r2 = r'\\qctdfsrt\prj\qct\chips\lahaina\sandiego\test\vcd\r2_sec5lpe\tester_vcd' #lahaina r2 common path
+par_vector_path_r2p1 = r'\\qctdfsrt\prj\qct\chips\lahaina\sandiego\test\vcd\r2p1_sec5lpe\tester_vcd' #lahaina r2.1 common path
 
 ## path to log ##
-#lahaina
-# py_log_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\atpg_cdp\lahaina\r2\py_log"
-# conversion_log_csv_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\atpg_cdp\lahaina\r2\conversion_log"
-#waipio
-py_log_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\atpg_cdp\waipio\r1\py_log"
-conversion_log_csv_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\atpg_cdp\waipio\r1\conversion_log"
+# lahaina
+py_log_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\atpg_cdp\lahaina\r2\py_log"
+conversion_log_csv_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\atpg_cdp\lahaina\r2\conversion_log"
 
 # set up logger
 logger = logging.getLogger(__name__)
@@ -514,17 +507,15 @@ def store_all_zip_atpg(dest_dir, pattern_category, vector_type):
     # print(df_map)
 
     # set up pattern source path
-    # path_atpg_r2 = os.path.join(par_vector_path_r2, 'ATPG', 'SRC')
-    # path_atpg_r2p1 = os.path.join(par_vector_path_r2p1, 'ATPG', 'SRC')
-    path_atpg_r1 = os.path.join(par_vector_path_r1, 'ATPG', 'SRC')
+    path_atpg_r2 = os.path.join(par_vector_path_r2, 'ATPG', 'SRC')
+    path_atpg_r2p1 = os.path.join(par_vector_path_r2p1, 'ATPG', 'SRC')
 
     # set up counter
     total_hdr_cnt = 0
     total_pl_cnt = 0
     # total_r2_cnt = 0
     # total_r2p1_cnt = 0
-    # dict_rev_cnt = {'r2':0, 'r2p1':0}
-    dict_rev_cnt = {'r1': 0}
+    dict_rev_cnt = {'r2':0, 'r2p1':0}
 
     start = time.time()
     logger.info(f"***** Starting .stil.gz files storing and classification for {pattern_category} {vector_type} *****")
@@ -541,25 +532,22 @@ def store_all_zip_atpg(dest_dir, pattern_category, vector_type):
 
         # copy header and payload zip file
         hdr_zip = hdr + '.stil.gz'
-        # path_r2_hdr_zip = os.path.join(path_atpg_r2,hdr_zip)
-        # path_r2p1_hdr_zip = os.path.join(path_atpg_r2p1,hdr_zip)
-        hdr_path_to_copy = os.path.join(path_atpg_r1,hdr_zip)
+        path_r2_hdr_zip = os.path.join(path_atpg_r2,hdr_zip)
+        path_r2p1_hdr_zip = os.path.join(path_atpg_r2p1,hdr_zip)
 
         pl_zip = pl + '.stil.gz'
-        # path_r2_pl_zip = os.path.join(path_atpg_r2,pl_zip)
-        # path_r2p1_pl_zip = os.path.join(path_atpg_r2p1,pl_zip)
-        pl_path_to_copy = os.path.join(path_atpg_r1,pl_zip)
+        path_r2_pl_zip = os.path.join(path_atpg_r2,pl_zip)
+        path_r2p1_pl_zip = os.path.join(path_atpg_r2p1,pl_zip)
 
-        # # check to copy R2.1 or R2 patterns. Coded based on lahaina case
-        # if (os.path.exists(path_r2p1_hdr_zip)) & (os.path.exists(path_r2p1_pl_zip)):
-        #     rev = 'r2p1'
-        #     hdr_path_to_copy = path_r2p1_hdr_zip
-        #     pl_path_to_copy = path_r2p1_pl_zip
-        # else:
-        #     rev = 'r2'
-        #     hdr_path_to_copy = path_r2_hdr_zip
-        #     pl_path_to_copy = path_r2_pl_zip
-        rev = 'r1'
+        # check to copy R2.1 or R2 patterns. Coded based on lahaina case
+        if (os.path.exists(path_r2p1_hdr_zip)) & (os.path.exists(path_r2p1_pl_zip)):
+            rev = 'r2p1'
+            hdr_path_to_copy = path_r2p1_hdr_zip
+            pl_path_to_copy = path_r2p1_pl_zip
+        else:
+            rev = 'r2'
+            hdr_path_to_copy = path_r2_hdr_zip
+            pl_path_to_copy = path_r2_pl_zip
 
         # comp_type level dir: lpc or lpu
         comp_type = list_pl_parsed[3]
@@ -649,13 +637,13 @@ def store_all_zip_atpg(dest_dir, pattern_category, vector_type):
         elapsed_inner = end_inner - start_inner
         logger.info(f'*** Time elapsed for file storing for this pattern: {timedelta(seconds=elapsed_inner)} ***')
 
-    # r2_cnt = dict_rev_cnt['r2']
-    # r2p1_cnt = dict_rev_cnt['r2p1']
+    r2_cnt = dict_rev_cnt['r2']
+    r2p1_cnt = dict_rev_cnt['r2p1']
 
     logger.info(f'***** Total count of .stil.gz files stored and classified for header: {total_hdr_cnt} *****')
     logger.info(f'***** Total count of .stil.gz files stored and classified for payload: {total_pl_cnt} *****')
-    # logger.info(f'***** Total count of files copied from Lahaina R2 path: {r2_cnt} *****')
-    # logger.info(f'***** Total count of files copied from Lahaina R2p1 path: {r2p1_cnt} *****')
+    logger.info(f'***** Total count of files copied from Lahaina R2 path: {r2_cnt} *****')
+    logger.info(f'***** Total count of files copied from Lahaina R2p1 path: {r2p1_cnt} *****')
 
     end = time.time()
     elapsed = end - start
