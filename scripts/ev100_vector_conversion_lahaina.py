@@ -59,7 +59,16 @@ logger.addHandler(stream_handler)
 
 
 def copy_all_zip(pattern_category, vector_type, local_loc):
-    """copy all zip files at vector_type level dir from an intermediate location (e.g. network drive) to local PC"""
+    """
+    Copy all zip files at vector_type level dir from an intermediate location (e.g. network drive) to local PC
+
+    :param pattern_category: str
+        choices are INT, SAF and TDF
+    :param vector_type: str
+        choice of vector type has PROD or RMA. As project evolves, more choices might come
+    :param local_loc: str
+        local dir to copy zip files to
+    """
     dir_orig = os.path.join(net_loc, pattern_category, vector_type)
     local_dir = os.path.join(local_loc, pattern_category, vector_type)
     # create_folder(local_dir)
@@ -78,8 +87,16 @@ def copy_all_zip(pattern_category, vector_type, local_loc):
 
 def copy_zip(pattern_category, vector_type, local_loc, dir_level, dir_name):
     """
-    copy zip files from an intermediate location (e.g. network drive) to local PC
-    one can determine which level of directory to copy
+    Copy zip files from an intermediate location (e.g. network drive) to local PC with user to determine which level of dir to copy
+
+    :param pattern_category: str
+        choices are INT, SAF and TDF
+    :param vector_type: str
+        choice of vector type has PROD or RMA. As project evolves, more choices might come
+    :param local_loc: str
+        local dir to copy zip files to
+    :param dir_level: str
+        the level of dir, which is determined by the level of classification in mapping file, to copy zip files from
     """
     # TODO: change for a better design
 
@@ -118,6 +135,19 @@ def traverse_levels(par_dir,pattern_category,vector_type, log_name, enable_del_z
     """
     The central function to execute conversion related actions across all levels of dir
     par_dir can be any level of dir to start
+
+    :param par_dir: str
+        dir to start traverse from top down
+    :param pattern_category: str
+        choices are INT, SAF and TDF
+    :param vector_type: str
+        choice of vector type has PROD or RMA. As project evolves, more choices might come
+    :param log_name: str
+        conversion log name (w/o .csv extension)
+    :param enable_del_zip: bool
+        if True, delete zip files after conversion
+    :param list_dirs_exclude: list. default = []
+        dir of DFT patterns to EXCLUDE from traverse
     """
 
     dict = {}
@@ -955,7 +985,7 @@ def main():
 
     # convert one block only
     dir_to_conv = os.path.join(local_loc, pattern_category, vector_type, 'TDF_ATPG_TOP')
-    traverse_levels(dir_to_conv,pattern_category,vector_type,log_name=log_name,enable_del_zip=0)
+    # traverse_levels(dir_to_conv,pattern_category,vector_type,log_name=log_name,enable_del_zip=0)
 
     # conv_log = os.path.join(conversion_log_csv_path, 'lahaina_r2_tdf_pattern_prod_111020.csv')
     # df_conv_log = pd.read_csv(conv_log)
