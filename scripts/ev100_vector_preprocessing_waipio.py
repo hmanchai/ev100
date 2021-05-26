@@ -43,7 +43,16 @@ logger.addHandler(stream_handler)
 
 
 def load_filter_map(pattern_category, vector_type):
-    """load and filter map file"""
+    """
+    Load and filter map file.
+
+    :param pattern_category: str
+        choice of pattern category has TDF, INT, or SAF
+    :param vector_type: str
+        choice of vector type has PROD or RMA. As project evolves, more choices might come
+    :return: pandas dataframe containing vector header and payload mapping
+    """
+
     if pattern_category == 'TDF':
         vector_type_col = 'Vector Type'
         map_path = tdf_map_path
@@ -64,7 +73,12 @@ def load_filter_map(pattern_category, vector_type):
     return df_map
 
 def create_folder(dir):
-    """create folder if not exists"""
+    """
+    Create the directory if not exists.
+
+    :param dir: str
+        directory to create
+    """
     if not os.path.exists(dir):
         try:
             os.makedirs(dir)
@@ -73,7 +87,18 @@ def create_folder(dir):
             logger.exception(f"Error! Could not create directory {f}")
 
 def copy_files(path_to_file, dest_dir, log_level):
-    """copy files to target directory, and increment count if copy succeeds"""
+    """
+    Copy files to target directory, and increment count if copy succeeds.
+
+    :param path_to_file: str
+        directory to source files to copy
+    :param dest_dir: str
+        directory of destination to copy source files to
+    :param log_level: str
+        defines the level of logger
+    :return: bool
+        0 if failed; 1 if successful
+    """
     try:
         shutil.copy(path_to_file, dest_dir)
     except Exception:
@@ -88,10 +113,17 @@ def copy_files(path_to_file, dest_dir, log_level):
 
 def store_all_zip_tdf(dest_dir, vector_type, pattern_category='TDF'):
     """
-    user chooses vector type (PROD, RMA)
-    copy ALL zip files from original dir, classify (by: block, domain, mode, etc.) and store in a target location,
+    Copy TDF STIL zip files from original dir, classify (by: block, domain, mode, etc.) and store in a target location,
     e.g. network drive
-    NOTE: double copy is OK and will overwrite
+    NOTE: double copy is OK and will just overwrite existing
+
+
+    :param dest_dir: str
+        directory of destination to store STIL zip files
+    :param vector_type: str
+        choice of vector type has PROD or RMA. As project evolves, more choices might come
+    :param pattern_category: str
+        fixed to "TDF" in this case
     """
     # TODO: multi-threading
     # dir structure:
@@ -218,10 +250,16 @@ def store_all_zip_tdf(dest_dir, vector_type, pattern_category='TDF'):
 
 def store_all_zip_atpg(dest_dir, pattern_category, vector_type):
     """
-    user chooses pattern (INT,SAF) and vector type (PROD, RMA)
-    copy ALL zip files from original dir, classify (by: domain, mode, etc.) and store in a target location,
+    Copy INT or SAF STIL zip files from original dir, classify (by: block, domain, mode, etc.) and store in a target location,
     e.g. network drive
-    NOTE: double copying is OK and will overwrite
+    NOTE: double copy is OK and will overwrite
+
+    :param dest_dir: str
+        directory of destination to store STIL zip files
+    :param vector_type: str
+        choice of vector type has PROD or RMA. As project evolves, more choices might come
+    :param pattern_category: str
+        choices are "INT" or "SAF" for ATPG patterns
     """
     # INT -> PROD/RMA -> lpc/lpu -> domain ->mode
     # SAF -> PROD/RMA -> lpc -> topoff/regular (-> F32/regular -> apm/regular) -> domain ->mode
@@ -355,7 +393,31 @@ def store_all_zip_atpg(dest_dir, pattern_category, vector_type):
     logger.info(f'***** Total time elapsed for file storing and classification: {timedelta(seconds=elapsed)} *****')
 
 def generate_pats_txt(pattern_category, vector_type, dir_pat, dir_exec, log_name, lim, list_dirs_exclude = [], pin_group = 'OUT', enable_cyc_cnt=1, block=None):
-    """generate a set of PATS.txt files and parent directories (vector_type level) for loading batches of patterns"""
+    """
+    Generate a set of PATS.txt files for pattern batch execution.
+
+    :param vector_type: str
+        choice of vector type has PROD or RMA. As project evolves, more choices might come
+    :param pattern_category: str
+        choices are INT, SAF and TDF
+    :param dir_pat: str
+        top level dir for DFT patterns. e.g. in SVE-EV100-1 PC, dir_pat can be F:\ATPG_CDP\Lahaina\r2 for Lahaina R2
+    :param dir_exec: str
+        top level for PATS.txt files. e.g. in SVE-EV100-1 PC, dir_exec can be F:\ATPG_CDP\Lahaina\r2\pattern_execution\Pattern_list for Lahaina R2
+    :param log_name: str
+        conversion log name (w/o .csv extension)
+    :param lim: int
+        limit for the number of patterns to host in a PATS.txt file
+    :param list_dirs_exclude: list. default = []
+        dir of DFT patterns to EXCLUDE from PATS.TXT
+    :param pin_group: str. default = 'OUT'
+        pin group mask. Choices are 'IN','OUT','ALL_PINS'
+    :param enable_cyc_cnt: bool. default = True
+        if True, actual cycle count of each pattern will be extracted from conversion log and put in PATS.txt; if false, cycle count will be 0 in PATS.txt
+    :param block: str. default = None
+        Only needed for TDF pattern. This rule is derived based on Lahaina mapping files obtained from PTE (i.e. In Lahaina PTE mapping files,
+        TDF patterns are classified by block, such as CPU and GPU, but ATPG are not. The rule can change if mapping file changes in other projects
+    """
 
     conv_log = os.path.join(conversion_log_csv_path, log_name + '.csv')
     df_conv_log = pd.read_csv(conv_log)
@@ -580,14 +642,14 @@ def generate_pats_txt_mod(pattern_category, vector_type, dir_pat, dir_exec, log_
 
 def main():
 
-    ### Store and Classify INT/SAF patterns ###
-    # a network drive location to store all pattern zip files
-    # dest = r'\\qctdfsrt\prj\vlsi\vetch_pst\atpg_cdp\lahaina'
-    dest = r'\\qctdfsrt\prj\vlsi\vetch_pst\atpg_cdp\waipio'
-    pattern_category = 'SAF'
-    # for vector_type in ['PROD','RMA']:
-    for vector_type in ['PROD']:
-        store_all_zip_atpg(dest,pattern_category,vector_type)
+    # ### Store and Classify INT/SAF patterns ###
+    # # a network drive location to store all pattern zip files
+    # # dest = r'\\qctdfsrt\prj\vlsi\vetch_pst\atpg_cdp\lahaina'
+    # dest = r'\\qctdfsrt\prj\vlsi\vetch_pst\atpg_cdp\waipio'
+    # pattern_category = 'SAF'
+    # # for vector_type in ['PROD','RMA']:
+    # for vector_type in ['PROD']:
+    #     store_all_zip_atpg(dest,pattern_category,vector_type)
 
     ### Store and Classify TDF patterns ###
 
