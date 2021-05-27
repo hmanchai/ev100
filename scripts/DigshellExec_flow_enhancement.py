@@ -1,3 +1,9 @@
+#########################################
+# This version of DigshellExec.py is an #
+# enhanced version, friendly for        #
+# integration with HVV infrastructure   #
+#########################################
+
 # REVISION = 'DigShellExec.py REV : 1.00.00 10/09/20'
 # print(REVISION)
 import json
@@ -11,8 +17,6 @@ import glob
 from datetime import date
 import time
 
-# from ev100_vector_conversion_lahaina import sorted_alphanumeric
-
 
 ## Below section is for Runsequence set up ##
 # runseq_json = r'C:\AXITestPrograms\Qualcomm\RUNSEQUENCE_Mar1_DEMO\go_RUNSEQUENCE.json'
@@ -25,11 +29,21 @@ import time
 
 
 def digshell_exec(sn_to_append, log_dir, pat_type, voltage_mode):
-    # if (len(sys.argv) < 2):
-    #     jsonfile = r"C:\vi\pats_abs\go_Lahaina_abs.json"
-    # else:
-    #     jsonfile = sys.argv[1]
+    """
+    execute digshell to run DFT patterns
 
+    :param sn_to_append: str
+        serial number of the DUT (w/o "0x")
+    :param log_dir: str
+        directory to dump test log (.csv format).
+    :param pat_type:
+        atpg (int and saf) or tdf
+    :param voltage_mode: str
+        voltage modes associated with DFT patterns, e.g. svs, nom, tur
+    :return:
+    """
+
+    # TODO Roshni: change pats.txt paths for Waipio once available; add functionality to select between projects so project-specific pats.txt paths can be used
     if pat_type == 'tdf':
         pats_base_dir = r'F:\ATPG_CDP\Lahaina\r2\pattern_execution\Pattern_list\Seed_file_DO_NOT_modify\tdf'
     elif pat_type == 'atpg':
@@ -49,6 +63,7 @@ def digshell_exec(sn_to_append, log_dir, pat_type, voltage_mode):
     else:
         print('\n****** No {} found.******'.format(exit_file))
 
+    # TODO Roshni: add functionality to select between projects so project-specific JSON file can be loaded
     jsonfile = r"C:\vi\pats_abs\go_Lahaina_abs.json"
     tempfile = r"C:\AXITestPrograms\DigShell\temp.json"
     with open(jsonfile) as f:
@@ -78,7 +93,7 @@ def digshell_exec(sn_to_append, log_dir, pat_type, voltage_mode):
     data["LOOPS"] = 1
     data["SERVER_LOOP"] = 0
     data["RESET_AT_END"] = 2
-    data["FAILPINS"] = "OUT"
+    data["FAILPINS"] = "OUT" # "ALL_PINS"
     data["ADDER0"] = freq_step
     data["ADDER1"] = freq_step
     data["T0FREQ"] = freq_to_test
@@ -132,7 +147,20 @@ def digshell_exec(sn_to_append, log_dir, pat_type, voltage_mode):
     time.sleep(6)
 
 def dlog_csv_post_process(dlog_dir, output_dir, output_csv_name, pats_txt, voltage_mode):
-    """process invididual dlog csv's to generate a summary csv"""
+    """
+    process individual dlog csv's to generate a summary test log csv
+
+    :param dlog_dir: str
+        directory to individual dlog csv
+    :param output_dir: str
+        directory to dump test log (.csv format)
+    :param output_csv_name: str
+        test log name (w/o .csv)
+    :param pats_txt: str
+        pats.txt file name
+    :param voltage_mode: str
+        voltage modes associated with DFT patterns, e.g. svs, nom, tur
+    """
     # csv_path = os.path.join(dlog_dir, '*.csv')
     csv_path = dlog_dir + '*.csv'
     list_all_csv = glob.glob(csv_path)
@@ -202,12 +230,8 @@ def main():
                         help='voltage mode associated with DFT patterns')
     args = parser.parse_args()
 
+    # call digshell_exec()
     digshell_exec(args.sn, args.log_dir, args.pat_type, args.voltage_mode)
-
-    # sn = '42CA5C41'
-    # log_dir = r'\\qctdfsrt\prj\vlsi\vetch_pst\atpg_cdp\lahaina\r2\log_dir\031621_0x42CA5C41'
-    # digshell_exec(sn, log_dir)
-
 
 if __name__ == '__main__':
     main()
