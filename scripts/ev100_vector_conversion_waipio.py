@@ -984,5 +984,8 @@ def main():
     # Uncomment the below func call (traverse_levels()) to enable pattern conversion
     # traverse_levels(dir_to_conv,pattern_category,vector_type,log_name,enable_del_zip=False)
 
+    ### 3. View doc string ###
+    print(traverse_levels.__doc__) # get the docstring of function traverse_levels()
+
 if __name__ == "__main__":
     main()
