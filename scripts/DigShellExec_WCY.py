@@ -1,3 +1,9 @@
+#########################################
+# This version of DigshellExec.py is an #
+# early version, friendly for manual    #
+# test in bench.                        #
+#########################################
+
 REVISION = 'DigShellExec.py REV : 1.00.00 10/09/20'
 print(REVISION)
 import json
