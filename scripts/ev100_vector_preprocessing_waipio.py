@@ -10,9 +10,10 @@ from pathlib import Path
 
 # global variable
 
-## map files ##
+## mapping files ##
 #waipio
-int_saf_map_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\c_weicya\ev100\seed_files\map_files\waipio\waipio_v1_map_test_p1.csv"
+# int_saf_map_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\c_weicya\ev100\seed_files\map_files\waipio\waipio_v1_map_test_p1.csv"
+int_saf_map_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\c_weicya\ev100\seed_files\map_files\waipio\waipio_v1_map_052621_demo.csv"
 
 ## source path for patterns ##
 #waipio
@@ -30,7 +31,7 @@ logger.setLevel(logging.DEBUG)
 formatter = logging.Formatter('%(asctime)s:%(name)s:%(message)s')
 
 # py_log = os.path.join(py_log_path,'INT_pat_store_log.log')
-py_log = os.path.join(py_log_path,'py_test3.log')
+py_log = os.path.join(py_log_path,'py_052621_demo.log')
 file_handler = logging.FileHandler(py_log)
 file_handler.setLevel(logging.INFO)
 file_handler.setFormatter(formatter)
@@ -111,7 +112,7 @@ def copy_files(path_to_file, dest_dir, log_level):
             logger.debug(f'File copied: {os.path.basename(path_to_file)}')
         return 1
 
-def store_all_zip_tdf(dest_dir, vector_type, pattern_category='TDF'):
+def store_all_zip_tdf(dest_dir, vector_type, pattern_category='TDF'): #TODO Roshni: modify this func accordingly for Waipio after obtaining TDF map file, curently this is copied from Lahaina script
     """
     Copy TDF STIL zip files from original dir, classify (by: block, domain, mode, etc.) and store in a target location,
     e.g. network drive
@@ -302,6 +303,8 @@ def store_all_zip_atpg(dest_dir, pattern_category, vector_type):
         # Waipio V1
         rev = 'r1'
 
+        # TODO Roshni: use regular expression instead of positional indexing
+
         # comp_type level dir: lpc or lpu
         comp_type = list_pl_parsed[3]
         dir_comp_type = os.path.join(dest_dir,rev,pattern_category,vector_type,comp_type)
@@ -350,7 +353,7 @@ def store_all_zip_atpg(dest_dir, pattern_category, vector_type):
 
         # parse mode
         if list_hdr_parsed[-2] in (domain,'sr','t'): # 'sr' and 't' appear in SAF topoff patterns
-            mode = 'na'  # TODO: na might be nominal corner?
+            mode = 'na'
         else:
             mode = list_hdr_parsed[-2]
         # mode level dir
@@ -487,8 +490,6 @@ def generate_pats_txt(pattern_category, vector_type, dir_pat, dir_exec, log_name
     # dir_sub = os.path.join(dir_exec,pattern_category,vector_type)
     # create_folder(dir_sub)
 
-    # TODO: if TDF: group by block; if ATPG: just assign number
-
     # create individual PATS.txt and folder
     # pre_fix = 'PATS_' + pattern_category + '_' + vector_type + '_'
     for i in range(cnt):
@@ -527,167 +528,29 @@ def generate_pats_txt(pattern_category, vector_type, dir_pat, dir_exec, log_name
 
     print(f'*** PATS.txt generation completed for {pattern_category} {vector_type}')
 
-def generate_pats_txt_mod(pattern_category, vector_type, dir_pat, dir_exec, log_name, lim, list_dirs_exclude = [], pin_group = 'OUT', enable_cyc_cnt=1, block=None):
-    """generate a set of PATS.txt files and parent directories (vector_type level) for loading batches of patterns"""
-
-    conv_log = os.path.join(conversion_log_csv_path, log_name + '.csv')
-    df_conv_log = pd.read_csv(conv_log)
-
-    pin_group = pin_group  # OUT, ALL_PINS
-    keep_state = 0
-    load_pattern = 1
-    dummy_cfg = 'NULL'
-    dummy_xrl = 'NULL'
-    header = '; Pattern, Cycle Count, Enable Fail Mask Pin Group, Keep State, Load Pattern, cfg, xrl'
-
-    # # change all types to string and combine the strings separated by comma
-    # to_write = ','.join(map(str, [do_file_name, cyc_cnt, pin_group, keep_state, load_pattern, dummy_cfg, dummy_xrl]))
-
-    if pattern_category.lower() == 'tdf':
-        # dir to grab DO from
-        path_top_level = os.path.join(dir_pat,pattern_category,vector_type, block)
-        # dir to export PATS.txt to
-        dir_sub = os.path.join(dir_exec, pattern_category, vector_type, block)
-        # prefix for PATS.txt file name
-        pre_fix = 'PATS_' + pattern_category + '_' + vector_type + '_' + block + '_'
-    elif pattern_category.lower() in ['int','saf']:
-        path_top_level = os.path.join(dir_pat, pattern_category, vector_type)
-        dir_sub = os.path.join(dir_exec, pattern_category, vector_type)
-        pre_fix = 'PATS_' + pattern_category + '_' + vector_type + '_'
-
-    create_folder(dir_sub)
-
-    kw_burst = 'XMD'
-    kw_header = 'MHz'
-    do_files = []
-    for root, dirs, files in os.walk(path_top_level,topdown=True):
-        # exclude dirs
-        dirs[:] = [d for d in dirs if d not in list_dirs_exclude]
-
-        for file in files:
-            if (fnmatch.fnmatch(file, '*.do')) & (kw_header in file) & (kw_burst not in file):
-                # get abs paths for DO patterns
-                do_file = os.path.join(root,file)
-                do_files.append(do_file)
-
-    # block = os.path.basename(path_block)
-    # do_files = glob.glob(path_block + '/**/*.do', recursive=True)
-    if pattern_category.lower() == 'tdf':
-        # dir to grab DO from
-        path_top_level = os.path.join(dir_pat,pattern_category,vector_type, block)
-        # dir to export PATS.txt to
-        dir_sub = os.path.join(dir_exec, pattern_category, vector_type, block)
-        # prefix for PATS.txt file name
-        pre_fix = 'PATS_' + pattern_category + '_' + vector_type + '_' + block + '_'
-    elif pattern_category.lower() in ['int','saf']:
-        path_top_level = os.path.join(dir_pat,pattern_category,vector_type)
-        dir_sub = os.path.join(dir_exec, pattern_category, vector_type)
-        pre_fix = 'PATS_' + pattern_category + '_' + vector_type + '_'
-
-
-
-    quo, rem = divmod(len(do_files), lim)
-    # set up the number of PATS.txt
-    if quo:
-        if rem:
-            cnt = quo + 1
-        else:
-            cnt = quo
-    else:
-        cnt = 1
-
-    # # create subdir in execution dir
-    # dir_sub = os.path.join(dir_exec,pattern_category,vector_type)
-    # create_folder(dir_sub)
-
-    # TODO: if TDF: group by block; if ATPG: just assign number
-
-    # create individual PATS.txt and folder
-    # pre_fix = 'PATS_' + pattern_category + '_' + vector_type + '_'
-    for i in range(cnt):
-        pats_dir = os.path.join(dir_sub, str(i+1))
-        create_folder(pats_dir)
-        pats_txt_name = pre_fix + str(i+1) + '.txt'
-        pats_txt = os.path.join(pats_dir, pats_txt_name)
-        # write header
-        with open(pats_txt, 'w+') as f:
-            f.write(header + '\n')
-
-        # write patterns
-        start = i*lim
-        end = (i+1)*lim
-        for do_file in do_files[start:end]:
-            do_file_name = os.path.basename(do_file)
-            if enable_cyc_cnt:
-                try:
-                    filter = df_conv_log['pattern_name'] == do_file_name
-                    cyc_cnt = df_conv_log.loc[filter, 'extracted_cycle_count'].values[0]
-                except Exception as e:
-                    print(e)
-                    cyc_cnt = 0
-                # else:
-
-            else:
-                cyc_cnt = 0
-
-            # path_do_file = Path(do_file)
-            # print(path_do_file)
-
-            to_write = ','.join(
-                map(str, [do_file, cyc_cnt, pin_group, keep_state, load_pattern, dummy_cfg, dummy_xrl]))
-            with open(pats_txt, 'a+') as f:
-                f.write(to_write + '\n')
-
-    print(f'*** PATS.txt generation completed for {pattern_category} {vector_type}')
 
 def main():
+    ##**** 05/26/21. Examples demoed to Kuang ***##
+    ### 1. Store and Classify INT/SAF patterns ###
+    # network drive location to store all pattern zip files
+    dest = r'\\qctdfsrt\prj\vlsi\vetch_pst\atpg_cdp\waipio'
+    pattern_category = 'INT' #'SAF','TDF'
+    vector_type = 'PROD' #'RMA'
+    # Uncomment the below func call (store_all_zip_atpg()) to enable store and classification of STIL zip files
+    # store_all_zip_atpg(dest,pattern_category,vector_type)
 
-    # ### Store and Classify INT/SAF patterns ###
-    # # a network drive location to store all pattern zip files
-    # # dest = r'\\qctdfsrt\prj\vlsi\vetch_pst\atpg_cdp\lahaina'
-    # dest = r'\\qctdfsrt\prj\vlsi\vetch_pst\atpg_cdp\waipio'
-    # pattern_category = 'SAF'
-    # # for vector_type in ['PROD','RMA']:
-    # for vector_type in ['PROD']:
-    #     store_all_zip_atpg(dest,pattern_category,vector_type)
-
-    ### Store and Classify TDF patterns ###
-
-    ### Prepare PATS.txt ###
-    # pattern_category = 'SAF'
-    # vector_type = 'PROD'
-    # # list_block_hp = ['TDF_ATPG_CPU', 'TDF_ATPG_GFX', 'TDF_ATPG_DDR', 'TDF_ATPG_Q6', 'TDF_ATPG_REST']
-    # # list_block_lp = ['TDF_ATPG_CAMDV', 'TDF_ATPG_MODEM', 'TDF_ATPG_SP', 'TDF_ATPG_TILE', 'TDF_ATPG_TOP']
-    # dir_pat = r"F:\ATPG_CDP\Lahaina\r2"
-    # dir_exec = os.path.join(dir_pat,'pattern_execution','Pattern_list')
-    # if pattern_category.upper() == 'TDF':
-    #     log_name = 'lahaina_r2_tdf_prod_new_velocity'
-    # elif pattern_category.upper() == 'SAF':
-    #     log_name = 'lahaina_r2_saf_prod_new_velocity'
-    # elif pattern_category.upper() == 'INT':
-    #     log_name = 'lahaina_r2_int_prod_new_velocity'
-    # else:
-    #     print('Please check your pattern_category variable for accuracy!')
-
-    # list_exclusion = ['regular','topoff_cgc_t_sr_t']
-
-    # ## TDF ###
-    # # lim=1
-    # # for block in list_block_hp:
-    # #     generate_pats_txt(pattern_category,vector_type,dir_pat,dir_exec,log_name,lim, block=block)
-    # # blk = 'TDF_ATPG_CPU'
-    # # list_dirs_exclude = ['SVS','LSVS']
-    # # for blk in list_block_lp:
-    # #     generate_pats_txt(pattern_category,vector_type,dir_pat,dir_exec,list_dirs_exclude,log_name,lim,block=blk)
-    # # generate_pats_txt(pattern_category,vector_type,dir_pat,dir_exec,log_name,lim,list_dirs_exclude=list_dirs_exclude,block=blk)
-    # # generate_pats_txt_mod(pattern_category,vector_type,dir_pat,dir_exec,log_name,lim,list_dirs_exclude=list_dirs_exclude,enable_cyc_cnt=0,block=blk)
-    #
-    # ## INT, SAF ##
-    # lim = 50
-    # # list_dirs_exclude = ['na','svs','tur']
-    # # list_dirs_exclude = ['na','svs']
-    # generate_pats_txt_special(pattern_category,vector_type,dir_pat,dir_exec,log_name,lim)
-    # # generate_pats_txt(pattern_category,vector_type,dir_pat,dir_exec,log_name,lim, list_dirs_exclude=list_dirs_exclude)
+    ### 2. Generate pats.txt ###
+    # parent directory for DFT patterns, based on SVE-EV100-1 PC
+    dir_pat = r'F:\ATPG_CDP\Waipio\r1'
+    # create a folder under the parent directory to host the pats.txt to be generated
+    dir_exec = os.path.join(dir_pat, 'pattern_execution', 'pattern_list')
+    # copy the conversion log name from ev100_vector_conversion.py after the conversion process is finished
+    log_name = '052621_demo_conv_log'
+    # put 3 patterns in a pats.txt 
+    lim = 3
+    pin_group = 'ALL_PINS'
+    # Uncomment the below func call (generate_pats_txt()) to generate pats.txt for pattern batch execution
+    # generate_pats_txt(pattern_category,vector_type, dir_pat, dir_exec,log_name,lim,pin_group=pin_group)
 
 if __name__ == "__main__":
     main()
