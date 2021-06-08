@@ -21,7 +21,7 @@ vector_type = r"PROD|EVAL"
 rev = 'r1'
 chip_version = 'waipio'
 
-# rev -> dft type -> vector type -> lpu/lpc -> name -> freq mode
+# rev -> dft type -> vector type -> lpu/lpc -> domain name -> freq mode
 folder_ordering = ['Bin Si Revision', 'Block', 'DFT type', 'Vector Type', 'Vector', 'freq mode']
 
 map_path = r"C:\Users\rpenmatc\OneDrive - Qualcomm\Desktop\Automation csv\demo_all.csv"
@@ -228,15 +228,12 @@ def copy_payloads_tdf(dict_rev_cnt, dir_path, pl_path_to_copy, res_pl_cpy, row):
 
 def create_file_path(dest_dir, payload, row):
     dir_path = os.path.join(dest_dir, chip_version)
-    name = ""
     for folder_name in folder_ordering:
         if folder_name == 'Vector':
             comp_type = re.search("(lpc|lpu)", row[folder_name])[0]
             if (row['DFT type'] == 'SAF'):
                 if re.search("(lpc_se0_|lpu_se0_)(.*)", payload):
-                    full_name = re.search("(lpc_se0_|lpu_se0_)(.*)", payload).group(2)
-                    split_name = re.split("_", full_name)
-                    name = split_name[0]
+                    name, split_name = find_value_after_regex(payload, "(lpc_se0_|lpu_se0_)(.*)")
                     dir_path = os.path.join(dir_path, comp_type, 'se0')
                     if name == 'F32':
                         dir_path = os.path.join(dir_path, name, split_name[1])
@@ -246,15 +243,24 @@ def create_file_path(dest_dir, payload, row):
                         else:
                             dir_path = os.path.join(dir_path, 'regular', 'regular', name)
                 else:
-                    dir_path = os.path.join(dir_path, comp_type, 'regular')
+                    name, split_name = find_value_after_regex(payload, "(lpc_|lpu_)(.*)")
+                    dir_path = os.path.join(dir_path, comp_type, 'regular', name)
             else:
                 full_name = re.search("(lpc_|lpu_)(.*)", row[folder_name]).group(2)
                 name = re.split("_", full_name)[0]
                 dir_path = os.path.join(dir_path, comp_type, name)
 
         else:
+            name = ""
             dir_path = os.path.join(dir_path, row[folder_name])
     return comp_type, dir_path, name
+
+
+def find_value_after_regex(payload, regex_value):
+    full_name = re.search(regex_value, payload).group(2)
+    split_name = re.split("_", full_name)
+    name = split_name[0]
+    return name, split_name
 
 
 def generate_pats_txt(pattern_category, vector_type, dir_pat, dir_exec, log_name, lim, list_dirs_exclude = [], pin_group = 'OUT', enable_cyc_cnt=1, block=None):

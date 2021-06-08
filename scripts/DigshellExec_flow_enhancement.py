@@ -17,6 +17,7 @@ import glob
 from datetime import date
 import time
 
+chip_version = 'Lahaina'
 
 ## Below section is for Runsequence set up ##
 # runseq_json = r'C:\AXITestPrograms\Qualcomm\RUNSEQUENCE_Mar1_DEMO\go_RUNSEQUENCE.json'
@@ -42,12 +43,10 @@ def digshell_exec(sn_to_append, log_dir, pat_type, voltage_mode):
         voltage modes associated with DFT patterns, e.g. svs, nom, tur
     :return:
     """
-
-    # TODO Roshni: change pats.txt paths for Waipio once available; add functionality to select between projects so project-specific pats.txt paths can be used
     if pat_type == 'tdf':
-        pats_base_dir = r'F:\ATPG_CDP\Lahaina\r2\pattern_execution\Pattern_list\Seed_file_DO_NOT_modify\tdf'
+        pats_base_dir = r'F:\ATPG_CDP' + '\\' + chip_version + r'\r2\pattern_execution\Pattern_list\Seed_file_DO_NOT_modify\tdf'
     elif pat_type == 'atpg':
-        pats_base_dir = r'F:\ATPG_CDP\Lahaina\r2\pattern_execution\Pattern_list\Seed_file_DO_NOT_modify\atpg\by_voltage_mode'
+        pats_base_dir = r'F:\ATPG_CDP' + '\\' + chip_version + r'\r2\pattern_execution\Pattern_list\Seed_file_DO_NOT_modify\atpg\by_voltage_mode'
 
     temp_path = r'\\qctdfsrt\prj\vlsi\vetch_pst\jianingz\handler_integration\temp_file_DO_NOT_MODIFY'
     exit_file = 'digshell_exec_success.txt'
@@ -63,8 +62,8 @@ def digshell_exec(sn_to_append, log_dir, pat_type, voltage_mode):
     else:
         print('\n****** No {} found.******'.format(exit_file))
 
-    # TODO Roshni: add functionality to select between projects so project-specific JSON file can be loaded
-    jsonfile = r"C:\vi\pats_abs\go_Lahaina_abs.json"
+
+    jsonfile = r"C:\vi\pats_abs\go_" + chip_version + "_abs.json"
     tempfile = r"C:\AXITestPrograms\DigShell\temp.json"
     with open(jsonfile) as f:
         data = json.load(f)
@@ -103,7 +102,7 @@ def digshell_exec(sn_to_append, log_dir, pat_type, voltage_mode):
     ############################################
 
     today = date.today()
-    base_dir = r'F:\ATPG_CDP\Lahaina\r2\pattern_execution\execution_dlog'
+    base_dir = r'F:\ATPG_CDP' + '\\' + chip_version + r'\r2\pattern_execution\execution_dlog'
     today_dir = os.path.join(base_dir,'dft_run_'+str(today))
     if not os.path.exists(today_dir):
         os.mkdir(today_dir)
