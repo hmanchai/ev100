@@ -41,6 +41,9 @@ def create_mvp_file(excel_pinout, dest):
     mvp_df = pd.concat(frames)
     mvp_df = add_pin_groups(df_pins, mvp_df)
     #txt_file.write(channel_df.to_string)
+
+    pd.set_option('display.max_rows', None)
+    print(mvp_df)
     mvp_df.to_csv(dest, index=None, sep='\t', header=False, mode='a')
     txt_file.close()
 
@@ -63,6 +66,7 @@ def add_pin_groups(df_pins, mvp_df):
         sub_df['MVP       '] = sub_df['MVP       '].apply(lambda x: pin_type_order.get(pin_type))
         sub_df['MVP       '] = sub_df['MVP       '].apply(lambda x: "{:<15}".format(x))
         sub_df['Pin Name'] = sub_df['Pin Name'].apply(lambda x: x.lower())
+        sub_df['Pin Name'] = sub_df['Pin Name'].apply(lambda x: "{:<15}".format(x))
         frames = [mvp_df, sub_df]
         mvp_df = pd.concat(frames)
     return mvp_df
