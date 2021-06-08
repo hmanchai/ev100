@@ -15,49 +15,31 @@ from pathlib import Path
 ## mapping files ##
 #waipio
 
-# filter patterns
-pattern_category = r"INT|SAF|TDF"
-vector_type = r"PROD|EVAL"
-rev = 'r1'
-chip_version = 'waipio'
-
-# rev -> dft type -> vector type -> lpu/lpc -> domain name -> freq mode
-folder_ordering = ['Bin Si Revision', 'Block', 'DFT type', 'Vector Type', 'Vector', 'freq mode']
-
-map_path = r"C:\Users\rpenmatc\OneDrive - Qualcomm\Desktop\Automation csv\demo_all.csv"
-# int_saf_map_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\c_weicya\ev100\seed_files\map_files\waipio\waipio_v1_map_test_p1.csv"
-#int_saf_map_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\c_weicya\ev100\seed_files\map_files\waipio\waipio_v1_map_052621_demo.csv"
-
-## source path for patterns ##
-#waipio
-par_vector_path_r1 = r'\\qctdfsrt\prj\qct\chips' + "\\" + chip_version + r'\sandiego\test\vcd' + "\\" + rev + r'_sec5lpe\tester_vcd' #waipio r1 common path
-
-## path to log ##
-#waipio
-py_log_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\atpg_cdp" + "\\" + chip_version + "\\" + rev + "\\" + r"py_log"
-conversion_log_csv_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\atpg_cdp" + "\\" + chip_version + "\\" + rev + "\\" + r"\conversion_log"
-
-# set up logger
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
-
-formatter = logging.Formatter('%(asctime)s:%(name)s:%(message)s')
-
-updated_data_time = time.strftime("%Y%m%d-%H%M%S")
-# py_log = os.path.join(py_log_path,'INT_pat_store_log.log')
-py_log = os.path.join(py_log_path, 'py_' + updated_data_time + '_demo.log')
-file_handler = logging.FileHandler(py_log)
-file_handler.setLevel(logging.INFO)
-file_handler.setFormatter(formatter)
-
-stream_handler = logging.StreamHandler()
-stream_handler.setFormatter(formatter)
-
-logger.addHandler(file_handler)
-logger.addHandler(stream_handler)
 
 
-def load_filter_map():
+
+def set_up_logger():
+    global logger, updated_data_time
+    # set up logger
+    logger = logging.getLogger(__name__)
+    logger.setLevel(logging.DEBUG)
+    formatter = logging.Formatter('%(asctime)s:%(name)s:%(message)s')
+    updated_data_time = time.strftime("%Y%m%d-%H%M%S")
+    # py_log = os.path.join(py_log_path,'INT_pat_store_log.log')
+    py_log = os.path.join(py_log_path, 'py_' + updated_data_time + '_demo.log')
+    file_handler = logging.FileHandler(py_log)
+    file_handler.setLevel(logging.INFO)
+    file_handler.setFormatter(formatter)
+    stream_handler = logging.StreamHandler()
+    stream_handler.setFormatter(formatter)
+    logger.addHandler(file_handler)
+    logger.addHandler(stream_handler)
+
+
+
+
+
+def load_filter_map(pattern_category, vector_type):
     """
     Load and filter map file.
 
@@ -113,7 +95,7 @@ def copy_files(path_to_file, dest_dir, log_level):
             logger.debug(f'File copied: {os.path.basename(path_to_file)}')
         return 1
 
-def store_all_zip_atpg(dest_dir):
+def store_all_zip_atpg(dest_dir, pattern_category, vector_type):
     """
     Copy INT or SAF STIL zip files from original dir, classify (by: block, domain, mode, etc.) and store in a target location,
     e.g. network drive
@@ -127,7 +109,7 @@ def store_all_zip_atpg(dest_dir):
     # dir_vector_type = os.path.join(dir_pattern,vector_type)
 
     # load and filter map file to pd df
-    df_map = load_filter_map()
+    df_map = load_filter_map(pattern_category, vector_type)
     # print(df_map)
 
     # set up pattern source path
@@ -398,17 +380,48 @@ def generate_pats_txt(pattern_category, vector_type, dir_pat, dir_exec, log_name
 
 
 def main():
+    global rev
+    global chip_version
+    global folder_ordering
+    global map_path
+    global par_vector_path_r1
+    global py_log_path
+    global conversion_log_csv_path
+
     ##**** 05/26/21. Examples demoed to Kuang ***##
     ### 1. Store and Classify INT/SAF patterns ###
     # network drive location to store all pattern zip files
     # dest = r'\\qctdfsrt\prj\vlsi\vetch_pst\atpg_cdp\waipio'
-    dest = r'C:\Users\rpenmatc\OneDrive - Qualcomm\Desktop\demo'
+    dest = r'C:\Users\rpenmatc\OneDrive - Qualcomm\Desktop\demo_test'
+    pattern_category = r"INT|SAF|TDF"
+    vector_type = r"PROD|EVAL"
 
+    # filter patterns
+    rev = 'r1'
+    chip_version = 'waipio'
+
+    # rev -> dft type -> vector type -> lpu/lpc -> domain name -> freq mode
+    folder_ordering = ['Bin Si Revision', 'Block', 'DFT type', 'Vector Type', 'Vector', 'freq mode']
+    map_path = r"C:\Users\rpenmatc\OneDrive - Qualcomm\Desktop\Automation csv\demo_all.csv"
+    # int_saf_map_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\c_weicya\ev100\seed_files\map_files\waipio\waipio_v1_map_test_p1.csv"
+    # int_saf_map_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\c_weicya\ev100\seed_files\map_files\waipio\waipio_v1_map_052621_demo.csv"
+
+    ## source path for patterns ##
+    # waipio
+    par_vector_path_r1 = r'\\qctdfsrt\prj\qct\chips' + "\\" + chip_version + r'\sandiego\test\vcd' + "\\" + rev + r'_sec5lpe\tester_vcd'  # waipio r1 common path
+
+    ## path to log ##
+    # waipio
+    py_log_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\atpg_cdp" + "\\" + chip_version + "\\" + rev + "\\" + r"py_log"
+
+    conversion_log_csv_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\atpg_cdp" + "\\" + chip_version + "\\" + rev + "\\" + r"\conversion_log"
     # Uncomment the below func call (store_all_zip_atpg()) to enable store and classification of STIL zip files
-    store_all_zip_atpg(dest)
+    set_up_logger()
+    store_all_zip_atpg(dest, pattern_category, vector_type)
 
     ### 2. Generate pats.txt ###
     # parent directory for DFT patterns, based on SVE-EV100-1 PC
+
     dir_pat = r'F:\ATPG_CDP\Waipio\r1'
     # create a folder under the parent directory to host the pats.txt to be generated
     dir_exec = os.path.join(dir_pat, 'pattern_execution', 'pattern_list')

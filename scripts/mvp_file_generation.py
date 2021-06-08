@@ -10,15 +10,14 @@ import re
 import collections
 
 
-pin_type_order = collections.OrderedDict()
-pin_type_order = {'Scan In': 'IN', 'Scan Out' : 'OUT', 'Clocks' : 'CLK', 'JTAG' : 'JTAG', 'EV-100 Control/Sel' : 'CONTROL'}
+
 
 def excel_to_df(excel_pinout):
     df_channels = pd.read_excel(excel_pinout, skiprows = 1, sheet_name=2)
     df_pins = pd.read_excel(excel_pinout, sheet_name=1)
     return df_channels, df_pins
 
-def create_mvp_file(excel_pinout, dest):
+def create_mvp_file(excel_pinout, dest, pin_type_order):
     df_channels, df_pins = excel_to_df(excel_pinout)
     txt_file = open(dest, "w")
     txt_file.write("1 Site(s)\n")
@@ -39,7 +38,7 @@ def create_mvp_file(excel_pinout, dest):
     # add all pins, scan in, scan out, clk, jtag, control
     frames = [channel_df, all_pins_df]
     mvp_df = pd.concat(frames)
-    mvp_df = add_pin_groups(df_pins, mvp_df)
+    mvp_df = add_pin_groups(df_pins, mvp_df, pin_type_order)
     #txt_file.write(channel_df.to_string)
 
     pd.set_option('display.max_rows', None)
@@ -55,7 +54,7 @@ def create_mvp_file(excel_pinout, dest):
     os.rename(dest, base + '.MVP')
     print("Successfully generate MVP file")
 
-def add_pin_groups(df_pins, mvp_df):
+def add_pin_groups(df_pins, mvp_df, pin_type_order):
     for pin_type in pin_type_order:
         gpio_column = df_pins.columns.get_loc(pin_type)
         type_column = gpio_column + 1
@@ -104,15 +103,16 @@ def get_channel_name(column_num, mvp_df, row, regex, all_pins_df):
     return mvp_df, all_pins_df
 
 
-#np.savetxt(r'c:\data\np.txt', df.values, fmt='%d', delimiter='\t')
-
 
 def main():
     chip_version = 'Waipio'
     #dest = r"C:\AxiTestPrograms\Qualcomm" + "\\'" + chip_version + r"\Common\QCOM_" + chip_version + r"_WY_v2.MVP"
     dest = r"C:\Users\rpenmatc\OneDrive - Qualcomm\Desktop\MVP file generation\QCOM_Waipio_WY_v2.txt"
     excel_pinout = r"C:\Users\rpenmatc\OneDrive - Qualcomm\Documents\waipio_cdp_pinout_v1.2.xlsx"
-    create_mvp_file(excel_pinout, dest)
+    pin_type_order = collections.OrderedDict()
+    pin_type_order = {'Scan In': 'IN', 'Scan Out': 'OUT', 'Clocks': 'CLK', 'JTAG': 'JTAG',
+                      'EV-100 Control/Sel': 'CONTROL'}
+    create_mvp_file(excel_pinout, dest, pin_type_order)
 
 if __name__ == "__main__":
     main()
