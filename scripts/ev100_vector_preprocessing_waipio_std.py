@@ -95,6 +95,31 @@ def copy_files(path_to_file, dest_dir, log_level):
             logger.debug(f'File copied: {os.path.basename(path_to_file)}')
         return 1
 
+def copy_files_threading(path_to_file, dest_dir, log_level):
+    """
+    Copy files to target directory, and increment count if copy succeeds.
+
+    :param path_to_file: str
+        directory to source files to copy
+    :param dest_dir: str
+        directory of destination to copy source files to
+    :param log_level: str
+        defines the level of logger
+    :return: bool
+        0 if failed; 1 if successful
+    """
+    try:
+        shutil.copy(path_to_file, dest_dir)
+    except Exception:
+        logger.exception(f'Error! Cannot copy: {path_to_file}')
+        return 0
+    else:
+        if log_level == 'info':
+            logger.info(f'File copied: {os.path.basename(path_to_file)}')
+        elif log_level == 'debug':
+            logger.debug(f'File copied: {os.path.basename(path_to_file)}')
+        return 1
+
 def store_all_zip_atpg(dest_dir, pattern_category, vector_type):
     """
     Copy INT or SAF STIL zip files from original dir, classify (by: block, domain, mode, etc.) and store in a target location,
@@ -392,7 +417,7 @@ def main():
     ### 1. Store and Classify INT/SAF patterns ###
     # network drive location to store all pattern zip files
     # dest = r'\\qctdfsrt\prj\vlsi\vetch_pst\atpg_cdp\waipio'
-    dest = r'C:\Users\rpenmatc\OneDrive - Qualcomm\Desktop\demo_test'
+    dest = r'C:\Users\rpenmatc\OneDrive - Qualcomm\Desktop\atpg_waipio'
     pattern_category = r"INT|SAF|TDF"
     vector_type = r"PROD|EVAL"
 
@@ -402,7 +427,8 @@ def main():
 
     # rev -> dft type -> vector type -> lpu/lpc -> domain name -> freq mode
     folder_ordering = ['Bin Si Revision', 'Block', 'DFT type', 'Vector Type', 'Vector', 'freq mode']
-    map_path = r"C:\Users\rpenmatc\OneDrive - Qualcomm\Desktop\Automation csv\demo_all.csv"
+    #map_path = r"C:\Users\rpenmatc\OneDrive - Qualcomm\Desktop\Automation csv\demo_all.csv"
+    map_path = r"C:\Users\rpenmatc\OneDrive - Qualcomm\Desktop\Automation csv\atpg_block_waipio.csv"
     # int_saf_map_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\c_weicya\ev100\seed_files\map_files\waipio\waipio_v1_map_test_p1.csv"
     # int_saf_map_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\c_weicya\ev100\seed_files\map_files\waipio\waipio_v1_map_052621_demo.csv"
 
