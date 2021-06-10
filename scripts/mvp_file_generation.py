@@ -44,17 +44,17 @@ def create_mvp_file(excel_pinout, dest, pin_type_order, connector_col_order):
     txt_file.close()
     txt_file = open(dest, "a")
     # add header columns and space after
-    column_headers = pd.DataFrame(columns=['MVP       ', 'Pin Name', 'Chassis', 'Slot', 'Channel', 'Site', 'Pattern#', 'Instrument Type'])
+    column_header_order = ['MVP       ', 'Pin Name', 'Chassis', 'Slot', 'Channel', 'Site', 'Pattern#', 'Instrument Type']
+    column_headers = pd.DataFrame(columns=column_header_order)
     column_headers.to_csv(dest, index=None, sep='\t', mode='a')
     txt_file.write("\n")
     txt_file.close()
     txt_file = open(dest, "a")
-    temp_df = pd.DataFrame(columns=['MVP       ', 'Pin Name', 'Chassis', 'Slot', 'Channel', 'Site', 'Pattern#', 'Instrument Type'])
+    temp_df = pd.DataFrame(columns=column_header_order)
     # add channels
     all_pins_df = pd.DataFrame(columns=['MVP       ', 'Pin Name'])
-    temp_df, all_pins_df = add_channel_rows(df_channels, temp_df, all_pins_df)
-    #temp_df, all_pins_df = add_channel_rows(df_channels, temp_df, '.1', all_pins_df)
-    #temp_df, all_pins_df = add_channel_rows(df_channels, temp_df, '.2', all_pins_df)
+    temp_df, all_pins_df = add_channel_rows(df_channels, temp_df, all_pins_df, connector_col_order)
+
     # add all pins, scan in, scan out, clk, jtag, control
     frames = [temp_df, all_pins_df]
     mvp_df = pd.concat(frames)
@@ -91,30 +91,31 @@ def add_pin_groups(df_pins, mvp_df, pin_type_order):
     return mvp_df
 
 
-def add_channel_rows(df_channels, mvp_df,all_pins_df):
+def add_channel_rows(df_channels, mvp_df,all_pins_df, connector_col_order):
     for i, row in df_channels.iterrows():
-        if not pd.isnull(row['HD Pins']):
-            if isinstance(row['HD Pins'], numbers.Number):
+        if not pd.isnull(row[connector_col_order[0]]):
+            if isinstance(row[connector_col_order[0]], numbers.Number):
                 gpio_regex = "(GPIO)(\()(.*)(\))"
                 ev_100_regex = "(EV100_)(.*)"
-                mvp_df, all_pins_df = get_channel_name(mvp_df, row, gpio_regex, all_pins_df)
-                mvp_df, all_pins_df = get_channel_name(mvp_df, row, ev_100_regex, all_pins_df)
+                mvp_df, all_pins_df = get_channel_name(mvp_df, row, gpio_regex, all_pins_df, connector_col_order)
+                mvp_df, all_pins_df = get_channel_name(mvp_df, row, ev_100_regex, all_pins_df, connector_col_order)
         else:
             continue
     return mvp_df, all_pins_df
 
 
-def get_channel_name(mvp_df, row, regex, all_pins_df):
-    if re.search(regex, row['Channels (Signals)']):
+def get_channel_name(mvp_df, row, regex, all_pins_df, connector_col_order):
+    if re.search(regex, row[connector_col_order[1]]):
         if "(GPIO)(\()(.*)(\))" in regex:
-            pin = re.search(regex, row['Channels (Signals)']).group(3)
+            pin = re.search(regex, row[connector_col_order[1]]).group(3)
             pin_name = 'gpio_' + pin
         else:
-            pin = re.search(regex, row['Channels (Signals)']).group(2)
+            pin = re.search(regex, row[connector_col_order[1]]).group(2)
             pin_name = pin.lower()
             pin_name = mode_correction(pin_name)
+            pin_name = jtag_correction(pin_name)
 
-        channel_num = int(row['Channel(DD192)'])
+        channel_num = int(row[connector_col_order[2]])
         pin_name = "{:<15}".format(pin_name)
         new_row = {'MVP       ': pin_name, 'Pin Name': pin_name, 'Chassis': 'A', 'Slot': '2', 'Channel': channel_num,
                    'Site': '1', 'Pattern#': '1', 'Instrument Type': '        Digital'}
@@ -132,11 +133,16 @@ def mode_correction(pin_name):
             pin_name = 'mode' + '_' + re.search("(mode)(.*)", pin_name).group(2)
     return pin_name
 
+def jtag_correction(pin_name):
+    if re.search("(jtag_)(.*)", pin_name):
+        if re.search("(jtag_sel)", pin_name) == None:
+            pin_name = re.search("(jtag_)(.*)", pin_name).group(2)
+    return pin_name
 
 def main():
     chip_version = 'Waipio'
     #dest = r"C:\AxiTestPrograms\Qualcomm" + "\\'" + chip_version + r"\Common\QCOM_" + chip_version + r"_WY_v2.MVP"
-    dest = r"C:\Users\rpenmatc\OneDrive - Qualcomm\Desktop\MVP file generation\QCOM_Waipio_WY_v2_test.txt"
+    dest = r"C:\Users\rpenmatc\OneDrive - Qualcomm\Desktop\MVP file generation\QCOM_Waipio_WY_v2.txt"
     excel_pinout = r"C:\Users\rpenmatc\OneDrive - Qualcomm\Documents\waipio_cdp_pinout_v1.2.xlsx"
     pin_type_order = collections.OrderedDict()
     pin_type_order = {'Scan In': 'IN', 'Scan Out': 'OUT', 'Clocks': 'CLK', 'JTAG': 'JTAG',

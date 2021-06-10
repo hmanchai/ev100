@@ -418,8 +418,8 @@ def main():
     # network drive location to store all pattern zip files
     # dest = r'\\qctdfsrt\prj\vlsi\vetch_pst\atpg_cdp\waipio'
     dest = r'C:\Users\rpenmatc\OneDrive - Qualcomm\Desktop\atpg_waipio'
-    pattern_category = r"INT|SAF|TDF"
-    vector_type = r"PROD|EVAL"
+    pattern_category = r"INT"
+    vector_type = r"PROD"
 
     # filter patterns
     rev = 'r1'
