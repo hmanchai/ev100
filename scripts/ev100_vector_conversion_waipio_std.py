@@ -26,7 +26,7 @@ py_log_name = 'py_conversion_' + updated_data_time + '_test.log'
 ## mapping files ##
 tdf_map_path = ""
 # tdf_map_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\c_weicya\ev100\seed_files\map_files\lahaina\Lahaina_V2p1_TDF_mapping_sheet.csv"
-int_saf_map_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\c_weicya\ev100\seed_files\map_files\waipio\waipio_v1_map_052621_demo.csv"
+int_saf_map_path = r"C:\Users\jianingz\Desktop\atpg_block_waipio.csv"
 
 ## seed files ##
 velocity_dft_cfg_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\c_weicya\ev100\seed_files\velocity_cfg\waipio\waipio_WY_dft_universal_v1.cfg"
@@ -388,25 +388,32 @@ def modify_cfg(path_stil_files, pattern_category):
                 elif pattern_category.lower() in ['int','saf']:
                     if fnmatch.fnmatch(stil_basename,'*_ts.stil'):
                         hdr_name = os.path.splitext(stil_basename)[0]
-                        # print('hdr:', hdr_name)
+
+
                     else:
                         pl_name = os.path.splitext(stil_basename)[0]
-                        # print('pl:',pl_name)
+
 
             if pattern_category.lower() == 'tdf':
                 #grab pattern name from map file
                 df_map = pd.read_csv(tdf_map_path)
                 #for TDF, header alone is sufficient to identify pattern name in map file
-                pattern_name = df_map.loc[df_map['Header'] == hdr_name, 'Pattern'].values[0]
+                pattern_name = df_map.loc[df_map['header'] == hdr_name, 'Pattern'].values[0]
                 # add BURST section to the end of CFG file; NOTE: header needs to be listed above payloads!
                 list_lines = ["\nBURST  " + pattern_name, "\n  " + hdr_name] + list_pl_name + ["\nEND BURST"]
             elif pattern_category.lower() in ['int','saf']:
                 df_map = pd.read_csv(int_saf_map_path)
+
                 #for INT/SAF, both header and payload are needed to identify pattern name in map file
-                filter = (df_map['Header vector name'] == hdr_name) & (df_map['Payload vector name'] == pl_name)
-                pattern_name = df_map.loc[filter, 'Pattern name'].values[0]
+                stripped_pl = pl_name[8:]
+                if pattern_category.lower() in ['int']:
+                    filter = (hdr_name == df_map['header']) & (stripped_pl == df_map['payload'])
+                else:
+                    filter = (hdr_name == df_map['header'])
+
+                pattern_name = df_map.loc[filter, 'Vector'].values[0]
                 # add BURST section to the end of CFG file; NOTE: header needs to be listed above payloads!
-                list_lines = ["\nBURST  " + pattern_name, "\n  " + hdr_name, "\n  " + pl_name, "\nEND BURST"]
+                list_lines = ["\nBURST  " + "MBURST_" + pattern_name + "_XMD", "\n  " + hdr_name, "\n  " + pl_name, "\nEND BURST"]
 
             with open(cfg,'a') as f:
                 f.writelines(list_lines)
@@ -478,6 +485,7 @@ def convert_stil_files(path_stil_files, pattern_category):
 
             # check if all individual STIL files are converted, and a combined DP is burst
             list_dp_files = glob.glob(path_stil_files + '/**/*.dp', recursive=True)
+
             if len(list_dp_files) == (len(list_stil_files) + 1):
                 # print('\n****** Conversion Completed ******\n')
                 logger.info('Cool! Conversion Successful')
@@ -976,17 +984,17 @@ def main():
 
     ##*** 5/26/21,  Examples demoed to Kunag. Demoed on SVE-EV100-1 PC***##
     ### 1. Copy all STIL zip files from network drive to local PC ###
-    pattern_category = 'INT'
+    pattern_category = 'SAF'
     vector_type = 'PROD'
-    local_loc = r'F:\ATPG_CDP\Waipio\r1'
+    local_loc = r"G:\ATPG_CDP"
     # Uncomment the below func call (copy_all_zip()) to enable STIL zip files copying
     # copy_all_zip(pattern_category,vector_type,local_loc)
 
     ### 2. Convert patterns from STIL to DO format ###
     dir_to_conv = os.path.join(local_loc, pattern_category, vector_type)
-    log_name = '052721_conv_test_log'
+    log_name = '061421_conv_test_log'
     # Uncomment the below func call (traverse_levels()) to enable pattern conversion
-    # traverse_levels(dir_to_conv,pattern_category,vector_type,log_name,enable_del_zip=False)
+    traverse_levels(dir_to_conv,pattern_category,vector_type,log_name,enable_del_zip=False)
 
     ### 3. View doc string ###
     print(traverse_levels.__doc__) # get the docstring of function traverse_levels()
