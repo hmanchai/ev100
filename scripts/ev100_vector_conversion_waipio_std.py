@@ -986,13 +986,13 @@ def main():
     ### 1. Copy all STIL zip files from network drive to local PC ###
     pattern_category = 'SAF'
     vector_type = 'PROD'
-    local_loc = r"G:\ATPG_CDP"
+    local_loc = r"G:\ATPG_CDP\freq_mode_5_updated\waipio\r1_sec5lpe\ATPG"
     # Uncomment the below func call (copy_all_zip()) to enable STIL zip files copying
     # copy_all_zip(pattern_category,vector_type,local_loc)
 
     ### 2. Convert patterns from STIL to DO format ###
     dir_to_conv = os.path.join(local_loc, pattern_category, vector_type)
-    log_name = '061421_conv_test_log'
+    log_name = '061521_conv_test_log'
     # Uncomment the below func call (traverse_levels()) to enable pattern conversion
     traverse_levels(dir_to_conv,pattern_category,vector_type,log_name,enable_del_zip=False)
 

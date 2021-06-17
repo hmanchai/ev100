@@ -234,7 +234,8 @@ def copy_payloads_tdf(dict_rev_cnt, dir_path, pl_path_to_copy, res_pl_cpy, row):
 
 
 def create_file_path(dest_dir, payload, row):
-    dir_path = os.path.join(dest_dir, chip_version)
+    #dir_path = os.path.join(dest_dir, chip_version)
+    dir_path = os.path.join(dest_dir, 'ATPG_CDP')
     for folder_name in folder_ordering:
         if folder_name == 'Vector':
             comp_type = re.search("(lpc|lpu)", row[folder_name])[0]
@@ -321,7 +322,7 @@ def generate_pats_txt(pattern_category, vector_type, dir_pat, dir_exec, log_name
         pre_fix = 'PATS_' + pattern_category + '_' + vector_type + '_' + block + '_'
     elif pattern_category.lower() in ['int','saf']:
         path_top_level = os.path.join(dir_pat, pattern_category, vector_type)
-        dir_sub = os.path.join(dir_exec, pattern_category, vector_type)
+        dir_sub = os.path.join(dir_exec, 'SVS', pattern_category, vector_type)
         pre_fix = 'PATS_' + pattern_category + '_' + vector_type + '_'
 
     create_folder(dir_sub)
@@ -424,8 +425,8 @@ def main():
     ### 1. Store and Classify INT/SAF patterns ###
     # network drive location to store all pattern zip files
     # dest = r'\\qctdfsrt\prj\vlsi\vetch_pst\atpg_cdp\waipio'
-    dest = r"G:\ATPG_CDP\INT"
-    pattern_category = r"SAF"
+    dest = r"G:"
+    pattern_category = r"INT"
     vector_type = r"PROD"
 
     # filter patterns
@@ -433,9 +434,10 @@ def main():
     chip_version = 'waipio'
 
     # rev -> dft type -> vector type -> lpu/lpc -> domain name -> freq mode
-    folder_ordering = ['Bin Si Revision', 'Block', 'DFT type', 'Vector Type', 'Vector', 'freq mode']
+   # folder_ordering = ['Bin Si Revision', 'Block', 'DFT type', 'Vector Type', 'Vector', 'freq mode']
+    folder_ordering = ['DFT type', 'Vector Type', 'Vector', 'freq mode']
     #map_path = r"C:\Users\rpenmatc\OneDrive - Qualcomm\Desktop\Automation csv\demo_all.csv"
-    map_path = r"C:\Users\jianingz\Desktop\atpg_block_waipio.csv"
+    map_path = r"C:\Users\jianingz\Desktop\freq_mode_fixed_saf.csv"
     # int_saf_map_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\c_weicya\ev100\seed_files\map_files\waipio\waipio_v1_map_test_p1.csv"
     # int_saf_map_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\c_weicya\ev100\seed_files\map_files\waipio\waipio_v1_map_052621_demo.csv"
 
@@ -455,17 +457,18 @@ def main():
     ### 2. Generate pats.txt ###
     # parent directory for DFT patterns, based on SVE-EV100-1 PC
 
+    #dir_pat = r"G:\ATPG_CDP\freq_mode_5_updated\waipio\r1_sec5lpe\ATPG"
     dir_pat = r"G:\ATPG_CDP"
     # create a folder under the parent directory to host the pats.txt to be generated
     dir_exec = os.path.join(dir_pat, 'pattern_execution', 'pattern_list')
     # copy the conversion log name from ev100_vector_conversion.py after the conversion process is finished
     # log_name = '061021_conv_test_log' # wapio INT conv log
-    log_name = '061021_SAF_conv_test_log'
+    log_name = '061021_conv_test_log'
     # put 3 patterns in a pats.txt 
     lim = 1
     pin_group = 'ALL_PINS'
     # Uncomment the below func call (generate_pats_txt()) to generate pats.txt for pattern batch execution
-    generate_pats_txt(pattern_category,vector_type, dir_pat, dir_exec,log_name,lim, [], pin_group,1, None)
+    generate_pats_txt(pattern_category,vector_type, dir_pat, dir_exec,log_name,lim, ['5', 'NOM', 'TUR', 'SVSD1'], pin_group,1, None)
 
 if __name__ == "__main__":
     main()
