@@ -424,9 +424,9 @@ def main():
     ### 1. Store and Classify INT/SAF patterns ###
     # network drive location to store all pattern zip files
     # dest = r'\\qctdfsrt\prj\vlsi\vetch_pst\atpg_cdp\waipio'
-    dest = r"G:\ATPG_CDP\INT"
+    dest = r"C:\Users\rpenmatc\OneDrive - Qualcomm\Desktop\SAF_updated"
     pattern_category = r"SAF"
-    vector_type = r"PROD"
+    vector_type = r"PROD|EVAL"
 
     # filter patterns
     rev = 'r1'
@@ -434,8 +434,8 @@ def main():
 
     # rev -> dft type -> vector type -> lpu/lpc -> domain name -> freq mode
     folder_ordering = ['Bin Si Revision', 'Block', 'DFT type', 'Vector Type', 'Vector', 'freq mode']
-    #map_path = r"C:\Users\rpenmatc\OneDrive - Qualcomm\Desktop\Automation csv\demo_all.csv"
-    map_path = r"C:\Users\jianingz\Desktop\atpg_block_waipio.csv"
+    map_path = r"C:\Users\rpenmatc\OneDrive - Qualcomm\Desktop\Automation csv\freq_mode_fixed_saf.csv"
+    #map_path = r"C:\Users\jianingz\Desktop\freq_mode_fixed_saf.csv"
     # int_saf_map_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\c_weicya\ev100\seed_files\map_files\waipio\waipio_v1_map_test_p1.csv"
     # int_saf_map_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\c_weicya\ev100\seed_files\map_files\waipio\waipio_v1_map_052621_demo.csv"
 
@@ -450,7 +450,7 @@ def main():
     conversion_log_csv_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\atpg_cdp" + "\\" + chip_version + "\\" + rev + "\\" + r"\conversion_log"
     # Uncomment the below func call (store_all_zip_atpg()) to enable store and classification of STIL zip files
     set_up_logger()
-    #store_all_zip_atpg(dest, pattern_category, vector_type)
+    store_all_zip_atpg(dest, pattern_category, vector_type)
 
     ### 2. Generate pats.txt ###
     # parent directory for DFT patterns, based on SVE-EV100-1 PC
@@ -460,12 +460,12 @@ def main():
     dir_exec = os.path.join(dir_pat, 'pattern_execution', 'pattern_list')
     # copy the conversion log name from ev100_vector_conversion.py after the conversion process is finished
     # log_name = '061021_conv_test_log' # wapio INT conv log
-    log_name = '061021_SAF_conv_test_log'
+    log_name = '061421_SAF_conv_test_log'
     # put 3 patterns in a pats.txt 
     lim = 1
     pin_group = 'ALL_PINS'
     # Uncomment the below func call (generate_pats_txt()) to generate pats.txt for pattern batch execution
-    generate_pats_txt(pattern_category,vector_type, dir_pat, dir_exec,log_name,lim, [], pin_group,1, None)
+    #generate_pats_txt(pattern_category,vector_type, dir_pat, dir_exec,log_name,lim, [], pin_group,1, None)
 
 if __name__ == "__main__":
     main()
