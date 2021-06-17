@@ -271,7 +271,7 @@ def find_value_after_regex(payload, regex_value):
     return name, split_name
 
 
-def generate_pats_txt(pattern_category, vector_type, dir_pat, dir_exec, log_name, lim, list_dirs_exclude = [], pin_group = 'OUT', enable_cyc_cnt=1, block=None):
+def generate_pats_txt(pattern_category, vector_type, dir_pat, dir_exec, log_name, lim, list_dirs_exclude = [], pin_group = 'OUT', enable_cyc_cnt=1, block=None, freq_modes = ['NOM', 'SVS', 'TUR', 'SVSD1']):
     """
     Generate a set of PATS.txt files for pattern batch execution.
 
@@ -296,120 +296,124 @@ def generate_pats_txt(pattern_category, vector_type, dir_pat, dir_exec, log_name
     :param block: str. default = None
         Only needed for TDF pattern. This rule is derived based on Lahaina mapping files obtained from PTE (i.e. In Lahaina PTE mapping files,
         TDF patterns are classified by block, such as CPU and GPU, but ATPG are not. The rule can change if mapping file changes in other projects
+    :param freq_modes: list. default = ['NOM', 'SVS', 'TUR', 'SVSD1']
+        frequency mode used for folder organization mode/pattern_category/vector_type
     """
+    for index, mode in enumerate(freq_modes):
+        sub_freq_modes = [x for x in freq_modes if x != mode]
+        list_dirs_exclude.append(sub_freq_modes)
+        conv_log = os.path.join(conversion_log_csv_path, log_name + '.csv')
 
-    conv_log = os.path.join(conversion_log_csv_path, log_name + '.csv')
+        df_conv_log = pd.read_csv(conv_log)
 
-    df_conv_log = pd.read_csv(conv_log)
+        pin_group = pin_group  # OUT, ALL_PINS
+        keep_state = 0
+        load_pattern = 1
+        dummy_cfg = 'NULL'
+        dummy_xrl = 'NULL'
+        header = '; Pattern, Cycle Count, Enable Fail Mask Pin Group, Keep State, Load Pattern, cfg, xrl'
 
-    pin_group = pin_group  # OUT, ALL_PINS
-    keep_state = 0
-    load_pattern = 1
-    dummy_cfg = 'NULL'
-    dummy_xrl = 'NULL'
-    header = '; Pattern, Cycle Count, Enable Fail Mask Pin Group, Keep State, Load Pattern, cfg, xrl'
-
-    # # change all types to string and combine the strings separated by comma
-    # to_write = ','.join(map(str, [do_file_name, cyc_cnt, pin_group, keep_state, load_pattern, dummy_cfg, dummy_xrl]))
+        # # change all types to string and combine the strings separated by comma
+        # to_write = ','.join(map(str, [do_file_name, cyc_cnt, pin_group, keep_state, load_pattern, dummy_cfg, dummy_xrl]))
 
 
-    if pattern_category.lower() in 'tdf':
-        # dir to grab DO from
-        path_top_level = os.path.join(dir_pat,pattern_category,vector_type, block)
-        # dir to export PATS.txt to
-        dir_sub = os.path.join(dir_exec, pattern_category, vector_type, block)
-        # prefix for PATS.txt file name
-        pre_fix = 'PATS_' + pattern_category + '_' + vector_type + '_' + block + '_'
-    elif pattern_category.lower() in ['int','saf']:
-        path_top_level = os.path.join(dir_pat, pattern_category, vector_type)
-        dir_sub = os.path.join(dir_exec, 'SVS', pattern_category, vector_type)
-        pre_fix = 'PATS_' + pattern_category + '_' + vector_type + '_'
+        if pattern_category.lower() in 'tdf':
+            # dir to grab DO from
+            path_top_level = os.path.join(dir_pat,pattern_category,vector_type, block)
+            # dir to export PATS.txt to
+            dir_sub = os.path.join(dir_exec, pattern_category, vector_type, block)
+            # prefix for PATS.txt file name
+            pre_fix = 'PATS_' + pattern_category + '_' + vector_type + '_' + block + '_'
+        elif pattern_category.lower() in ['int','saf']:
+            path_top_level = os.path.join(dir_pat, pattern_category, vector_type)
+            dir_sub = os.path.join(dir_exec, mode, pattern_category, vector_type)
+            pre_fix = 'PATS_' + pattern_category + '_' + vector_type + '_'
 
-    create_folder(dir_sub)
+        create_folder(dir_sub)
 
-    do_files = []
-    for root, dirs, files in os.walk(path_top_level,topdown=True):
-        # exclude dirs
-        dirs[:] = [d for d in dirs if d not in list_dirs_exclude]
+        do_files = []
+        for root, dirs, files in os.walk(path_top_level,topdown=True):
+            # exclude dirs
+            dirs[:] = [d for d in dirs if d not in list_dirs_exclude]
 
-        for file in files:
-            if fnmatch.fnmatch(file, '*.do'):
-                # get abs paths for DO patterns
-                do_file = os.path.join(root,file)
-                do_files.append(do_file)
+            for file in files:
+                if fnmatch.fnmatch(file, '*.do'):
+                    # get abs paths for DO patterns
+                    do_file = os.path.join(root,file)
+                    do_files.append(do_file)
 
-    # block = os.path.basename(path_block)
-    # do_files = glob.glob(path_block + '/**/*.do', recursive=True)
+        # block = os.path.basename(path_block)
+        # do_files = glob.glob(path_block + '/**/*.do', recursive=True)
 
-    # if pattern_category.lower() == 'tdf':
-    #     # dir to grab DO from
-    #     path_top_level = os.path.join(dir_pat,pattern_category,vector_type, block)
-    #     # dir to export PATS.txt to
-    #     dir_sub = os.path.join(dir_exec, pattern_category, vector_type, block)
-    #     # prefix for PATS.txt file name
-    #     pre_fix = 'PATS_' + pattern_category + '_' + vector_type + '_' + block + '_'
-    # elif pattern_category.lower() in ['int','saf']:
-    #     path_top_level = os.path.join(dir_pat,pattern_category,vector_type)
-    #     dir_sub = os.path.join(dir_exec, pattern_category, vector_type)
-    #     pre_fix = 'PATS_' + pattern_category + '_' + vector_type + '_'
+        # if pattern_category.lower() == 'tdf':
+        #     # dir to grab DO from
+        #     path_top_level = os.path.join(dir_pat,pattern_category,vector_type, block)
+        #     # dir to export PATS.txt to
+        #     dir_sub = os.path.join(dir_exec, pattern_category, vector_type, block)
+        #     # prefix for PATS.txt file name
+        #     pre_fix = 'PATS_' + pattern_category + '_' + vector_type + '_' + block + '_'
+        # elif pattern_category.lower() in ['int','saf']:
+        #     path_top_level = os.path.join(dir_pat,pattern_category,vector_type)
+        #     dir_sub = os.path.join(dir_exec, pattern_category, vector_type)
+        #     pre_fix = 'PATS_' + pattern_category + '_' + vector_type + '_'
 
-    quo, rem = divmod(len(do_files), lim)
-    # set up the number of PATS.txt
-    if quo:
-        if rem:
-            cnt = quo + 1
-        else:
-            cnt = quo
-    else:
-        cnt = 1
-
-    # # create subdir in execution dir
-    # dir_sub = os.path.join(dir_exec,pattern_category,vector_type)
-    # create_folder(dir_sub)
-
-    # create individual PATS.txt and folder
-    # pre_fix = 'PATS_' + pattern_category + '_' + vector_type + '_'
-
-    for i in range(cnt):
-
-        pats_dir = os.path.join(dir_sub, str(i+1))
-        create_folder(pats_dir)
-        pats_txt_name = pre_fix + str(i+1) + '.txt'
-        pats_txt = os.path.join(pats_dir, pats_txt_name)
-        # write header
-        with open(pats_txt, 'w+') as f:
-            f.write(header + '\n')
-
-        # write patterns
-        start = i*lim
-        end = (i+1)*lim
-        for do_file in do_files[start:end]:
-
-            do_file_name = os.path.basename(do_file)
-
-            if enable_cyc_cnt:
-
-                try:
-                    filter = df_conv_log['pattern_name'] == do_file_name
-                    cyc_cnt = df_conv_log.loc[filter, 'extracted_cycle_count'].values[0]
-
-                except Exception as e:
-                    print(e)
-                    cyc_cnt = 0
-                # else:
-
+        quo, rem = divmod(len(do_files), lim)
+        # set up the number of PATS.txt
+        if quo:
+            if rem:
+                cnt = quo + 1
             else:
-                cyc_cnt = 0
+                cnt = quo
+        else:
+            cnt = 1
 
-            # path_do_file = Path(do_file)
-            # print(path_do_file)
+        # # create subdir in execution dir
+        # dir_sub = os.path.join(dir_exec,pattern_category,vector_type)
+        # create_folder(dir_sub)
 
-            to_write = ','.join(
-                map(str, [do_file, cyc_cnt, pin_group, keep_state, load_pattern, dummy_cfg, dummy_xrl]))
-            with open(pats_txt, 'a+') as f:
-                f.write(to_write + '\n')
+        # create individual PATS.txt and folder
+        # pre_fix = 'PATS_' + pattern_category + '_' + vector_type + '_'
 
-    print(f'*** PATS.txt generation completed for {pattern_category} {vector_type}')
+        for i in range(cnt):
+
+            pats_dir = os.path.join(dir_sub, str(i+1))
+            create_folder(pats_dir)
+            pats_txt_name = pre_fix + str(i+1) + '.txt'
+            pats_txt = os.path.join(pats_dir, pats_txt_name)
+            # write header
+            with open(pats_txt, 'w+') as f:
+                f.write(header + '\n')
+
+            # write patterns
+            start = i*lim
+            end = (i+1)*lim
+            for do_file in do_files[start:end]:
+
+                do_file_name = os.path.basename(do_file)
+
+                if enable_cyc_cnt:
+
+                    try:
+                        filter = df_conv_log['pattern_name'] == do_file_name
+                        cyc_cnt = df_conv_log.loc[filter, 'extracted_cycle_count'].values[0]
+
+                    except Exception as e:
+                        print(e)
+                        cyc_cnt = 0
+                    # else:
+
+                else:
+                    cyc_cnt = 0
+
+                # path_do_file = Path(do_file)
+                # print(path_do_file)
+
+                to_write = ','.join(
+                    map(str, [do_file, cyc_cnt, pin_group, keep_state, load_pattern, dummy_cfg, dummy_xrl]))
+                with open(pats_txt, 'a+') as f:
+                    f.write(to_write + '\n')
+
+        print(f'*** PATS.txt generation completed for {pattern_category} {vector_type}{mode}')
 
 
 def main():
@@ -473,8 +477,8 @@ def main():
     lim = 1
     pin_group = 'ALL_PINS'
     # Uncomment the below func call (generate_pats_txt()) to generate pats.txt for pattern batch execution
-
-    generate_pats_txt(pattern_category,vector_type, dir_pat, dir_exec,log_name,lim, ['5', 'NOM', 'TUR', 'SVSD1'], pin_group,1, None)
+    freq_modes = ['SVS', 'NOM', 'TUR', 'SVSD1']
+    generate_pats_txt(pattern_category,vector_type, dir_pat, dir_exec,log_name,lim, ['5'], pin_group,1, None, freq_modes)
 
 
 if __name__ == "__main__":
