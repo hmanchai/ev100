@@ -454,13 +454,15 @@ def main():
     conversion_log_csv_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\atpg_cdp" + "\\" + chip_version + "\\" + rev + "\\" + r"\conversion_log"
     # Uncomment the below func call (store_all_zip_atpg()) to enable store and classification of STIL zip files
     set_up_logger()
-    store_all_zip_atpg(dest, pattern_category, vector_type)
+    #store_all_zip_atpg(dest, pattern_category, vector_type)
 
     ### 2. Generate pats.txt ###
     # parent directory for DFT patterns, based on SVE-EV100-1 PC
 
-    # dir_pat = r"G:\ATPG_CDP\freq_mode_5_updated\waipio\r1_sec5lpe\ATPG"
-    dir_pat = r"G:\ATPG_CDP"
+
+    #dir_pat = r"G:\ATPG_CDP\freq_mode_5_updated\waipio\r1_sec5lpe\ATPG"
+    dir_pat = r"E:\pattern_gen_debug"
+
     # create a folder under the parent directory to host the pats.txt to be generated
     dir_exec = os.path.join(dir_pat, 'pattern_execution', 'pattern_list')
     # copy the conversion log name from ev100_vector_conversion.py after the conversion process is finished
