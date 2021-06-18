@@ -74,18 +74,20 @@ def create_mvp_file(excel_pinout, dest, pin_type_order, connector_col_order):
     print("Successfully generate MVP file")
 
 def add_pin_groups(df_pins, mvp_df, pin_type_order):
+    mvp_spacing = 'MVP       '
+    pin_name = 'Pin Name'
     for pin_type in pin_type_order:
         gpio_column = df_pins.columns.get_loc(pin_type)
         type_column = gpio_column + 1
         sub_df = df_pins.iloc[1:,gpio_column: type_column+1]
         sub_df = sub_df.dropna(how='all')
-        sub_df.set_axis(['Pin Name', 'MVP       '], axis='columns', inplace=True)
-        sub_df = sub_df[['MVP       ', 'Pin Name']]
-        sub_df['MVP       '] = sub_df['MVP       '].apply(lambda x: pin_type_order.get(pin_type))
-        sub_df['MVP       '] = sub_df['MVP       '].apply(lambda x: "{:<15}".format(x))
-        sub_df['Pin Name'] = sub_df['Pin Name'].apply(lambda x: x.lower())
-        sub_df['Pin Name'] = sub_df['Pin Name'].apply(lambda x: mode_correction(x))
-        sub_df['Pin Name'] = sub_df['Pin Name'].apply(lambda x: "{:<15}".format(x))
+        sub_df.set_axis([pin_name, mvp_spacing], axis='columns', inplace=True)
+        sub_df = sub_df[[mvp_spacing, pin_name]]
+        sub_df[mvp_spacing] = sub_df[mvp_spacing].apply(lambda x: pin_type_order.get(pin_type))
+        sub_df[mvp_spacing] = sub_df[mvp_spacing].apply(lambda x: "{:<15}".format(x))
+        sub_df[pin_name] = sub_df[pin_name].apply(lambda x: x.lower())
+        sub_df[pin_name] = sub_df[pin_name].apply(lambda x: mode_correction(x))
+        sub_df[pin_name] = sub_df[pin_name].apply(lambda x: "{:<15}".format(x))
         frames = [mvp_df, sub_df]
         mvp_df = pd.concat(frames)
     return mvp_df
