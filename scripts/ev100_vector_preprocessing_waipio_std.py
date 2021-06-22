@@ -431,7 +431,7 @@ def main():
     # dest = r'\\qctdfsrt\prj\vlsi\vetch_pst\atpg_cdp\waipio'
 
     dest = r"C:\Users\rpenmatc\OneDrive - Qualcomm\Desktop\test_multi"
-    pattern_category = r"INT"
+    pattern_category = r"INT|SAF"
     vector_type = r"PROD"
 
     # filter patterns
@@ -453,13 +453,13 @@ def main():
 
     ## path to log ##
     # waipio
-    py_log_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\atpg_cdp" + "\\" + chip_version + "\\" + rev + "\\" + r"py_log"
-    #py_log_path = r"C:\Users\rpenmatc\OneDrive - Qualcomm\Desktop"
+    #py_log_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\atpg_cdp" + "\\" + chip_version + "\\" + rev + "\\" + r"py_log"
+    py_log_path = r"C:\Users\rpenmatc\OneDrive - Qualcomm\Desktop"
 
     conversion_log_csv_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\atpg_cdp" + "\\" + chip_version + "\\" + rev + "\\" + r"\conversion_log"
     # Uncomment the below func call (store_all_zip_atpg()) to enable store and classification of STIL zip files
     set_up_logger()
-    #store_all_zip_atpg(dest, pattern_category, vector_type)
+    store_all_zip_atpg(dest, pattern_category, vector_type)
 
     ### 2. Generate pats.txt ###
     # parent directory for DFT patterns, based on SVE-EV100-1 PC
@@ -480,7 +480,7 @@ def main():
     pin_group = 'ALL_PINS'
     # Uncomment the below func call (generate_pats_txt()) to generate pats.txt for pattern batch execution
     freq_modes = ['SVS', 'NOM', 'TUR', 'SVSD1']
-    generate_pats_txt(pattern_category,vector_type, dir_pat, dir_exec,log_name,lim, ['5'], pin_group,1, None, freq_modes)
+    #generate_pats_txt(pattern_category,vector_type, dir_pat, dir_exec,log_name,lim, ['5'], pin_group,1, None, freq_modes)
 
 
 if __name__ == "__main__":

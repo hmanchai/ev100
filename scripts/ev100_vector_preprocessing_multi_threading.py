@@ -10,6 +10,8 @@ import re
 import multiprocessing
 
 from gevent import monkey
+import subprocess
+
 monkey.patch_all()
 
 from gevent.pool import Pool
@@ -121,17 +123,24 @@ def copy_files_threading(path_to_file, dest_dir, log_level):
     :return: bool
         0 if failed; 1 if successful
     """
-    try:
-        shutil.copy(path_to_file, dest_dir)
-    except Exception:
-        logger.exception(f'Error! Cannot copy: {path_to_file}')
-        return 0
-    else:
-        if log_level == 'info':
-            logger.info(f'File copied: {os.path.basename(path_to_file)}')
-        elif log_level == 'debug':
-            logger.debug(f'File copied: {os.path.basename(path_to_file)}')
-        return 1
+
+    cmd = "pycopier " + "\"" + path_to_file + "\"" + " " + "\"" + dest_dir + "\""
+    subprocess.call(cmd)
+    if log_level == 'info':
+        logger.info(f'File copied: {os.path.basename(path_to_file)}')
+    elif log_level == 'debug':
+        logger.debug(f'File copied: {os.path.basename(path_to_file)}')
+    # try:
+    #     print("start copy")
+    #     shutil.copy(path_to_file, dest_dir)
+    #     print("end copy")
+    # except Exception:
+    #     logger.exception(f'Error! Cannot copy: {path_to_file}')
+    #     return 0
+    # else:
+
+    #     return 1
+
 
 def store_all_zip_atpg(dest_dir, pattern_category, vector_type):
     """
@@ -155,6 +164,8 @@ def store_all_zip_atpg(dest_dir, pattern_category, vector_type):
     # set up counter
     total_hdr_cnt = 0
     total_pl_cnt = 0
+    res_hdr_cpy = 0
+    res_pl_cpy = 0
     dict_rev_cnt = {'r1': 0}
 
     start = time.time()
@@ -199,38 +210,19 @@ def store_all_zip_atpg(dest_dir, pattern_category, vector_type):
             # res_hdr_cpy = copy_files(hdr_path_to_copy, dir_path, 'info')
             new_row = {'source': hdr_path_to_copy, 'dest': dir_path}
             df_file_loc = df_file_loc.append(new_row, ignore_index=True)
+            res_hdr_cpy += 1
             if row['DFT type'] == 'TDF':
+                res_pl_cpy += 1
                 df_file_loc = copy_payloads_tdf(dict_rev_cnt, dir_path, pl_path_to_copy, row, df_file_loc)
-
-
             else:
+                res_pl_cpy += 1
                 df_file_loc = copy_payload(dict_rev_cnt, dir_path, pl_path_to_copy, df_file_loc)
 
+    setup_thread_pool(dest_dir, df_file_loc)
 
-
-
-    csv_name = copy_files('info', df_file_loc, dest_dir)
-    print(csv_name)
-    no_of_procs = multiprocessing.cpu_count() * 4
-
-    file_size = os.stat(csv_name).st_size
-
-    file_size_per_chunk = file_size / no_of_procs
-
-    pool = Pool(no_of_procs)
-
-    for chunk in getChunks(csv_name, file_size_per_chunk):
-        pool.apply_async(worker, (csv_name, chunk))
-
-    pool.join()
-
-    res_hdr_cpy = 1
     dict_rev_cnt[rev] += res_hdr_cpy
-    if res_hdr_cpy:
-        logger.info(f'Header copied from Waipio {rev} path.')
 
     # copy payload and increment counter
-    res_pl_cpy = 0
 
 
     # increment total count
@@ -248,6 +240,19 @@ def store_all_zip_atpg(dest_dir, pattern_category, vector_type):
     end = time.time()
     elapsed = end - start
     logger.info(f'***** Total time elapsed for file storing and classification: {timedelta(seconds=elapsed)} *****')
+
+
+def setup_thread_pool(dest_dir, df_file_loc):
+    csv_name = copy_files('info', df_file_loc, dest_dir)
+    no_of_procs = multiprocessing.cpu_count() * 4
+    file_size = os.stat(csv_name).st_size
+    file_size_per_chunk = file_size / no_of_procs
+    pool = Pool(no_of_procs)
+
+    for chunk in getChunks(csv_name, file_size_per_chunk):
+        pool.apply_async(worker, (csv_name, chunk))
+    pool.join()
+
 
 def getChunks(file, size):
     f = open(file, 'rb')
