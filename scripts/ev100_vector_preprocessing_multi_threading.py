@@ -7,6 +7,13 @@ import time
 from datetime import timedelta
 import fnmatch
 import re
+import multiprocessing
+
+from gevent import monkey
+monkey.patch_all()
+
+from gevent.pool import Pool
+import sys
 
 from pathlib import Path
 
@@ -42,6 +49,7 @@ def set_up_logger():
 def load_filter_map(pattern_category, vector_type):
     """
     Load and filter map file.
+
     :param pattern_category: str
         choice of pattern category has TDF, INT, or SAF
     :param vector_type: str
@@ -58,6 +66,7 @@ def load_filter_map(pattern_category, vector_type):
 def create_folder(dir):
     """
     Create the directory if not exists.
+
     :param dir: str
         directory to create
     """
@@ -68,9 +77,10 @@ def create_folder(dir):
         except Exception:
             logger.exception(f"Error! Could not create directory {dir}")
 
-def copy_files(path_to_file, dest_dir, log_level):
+def copy_files(log_level, df_file_loc, dir_path):
     """
     Copy files to target directory, and increment count if copy succeeds.
+
     :param path_to_file: str
         directory to source files to copy
     :param dest_dir: str
@@ -80,21 +90,28 @@ def copy_files(path_to_file, dest_dir, log_level):
     :return: bool
         0 if failed; 1 if successful
     """
-    try:
-        shutil.copy(path_to_file, dest_dir)
-    except Exception:
-        logger.exception(f'Error! Cannot copy: {path_to_file}')
-        return 0
-    else:
-        if log_level == 'info':
-            logger.info(f'File copied: {os.path.basename(path_to_file)}')
-        elif log_level == 'debug':
-            logger.debug(f'File copied: {os.path.basename(path_to_file)}')
-        return 1
+
+    temp_csv = os.path.join(dir_path, 'temp.csv')
+    csv_file = open(temp_csv, "w")
+    df_file_loc.to_csv(temp_csv, index=None, sep=',', header=False, mode='a')
+    csv_file.close()
+    return temp_csv
+    # try:
+    #    df_file_loc.to_csv(dir_path, index=None, sep='\t', header=False, mode='a')
+    # except Exception:
+    #     logger.exception(f'Error! Cannot copy: {path_to_file}')
+    #     return 0
+    # else:
+    #     if log_level == 'info':
+    #         logger.info(f'File copied: {os.path.basename(path_to_file)}')
+    #     elif log_level == 'debug':
+    #         logger.debug(f'File copied: {os.path.basename(path_to_file)}')
+    #     return 1
 
 def copy_files_threading(path_to_file, dest_dir, log_level):
     """
     Copy files to target directory, and increment count if copy succeeds.
+
     :param path_to_file: str
         directory to source files to copy
     :param dest_dir: str
@@ -132,7 +149,7 @@ def store_all_zip_atpg(dest_dir, pattern_category, vector_type):
     # load and filter map file to pd df
     df_map = load_filter_map(pattern_category, vector_type)
     # print(df_map)
-
+    df_file_loc = pd.DataFrame(columns=['source', 'dest'])
     # set up pattern source path
 
     # set up counter
@@ -178,26 +195,51 @@ def store_all_zip_atpg(dest_dir, pattern_category, vector_type):
                     f"*** Currently storing .stil.gz files for {pattern_category} {vector_type} {comp_type} {name} {row['freq mode']} ***")
 
             # copy header and increment counter
-            res_hdr_cpy = copy_files(hdr_path_to_copy, dir_path, 'info')
-            dict_rev_cnt[rev] += res_hdr_cpy
-            if res_hdr_cpy:
-                logger.info(f'Header copied from Waipio {rev} path.')
 
-            # copy payload and increment counter
-            res_pl_cpy = 0
+            # res_hdr_cpy = copy_files(hdr_path_to_copy, dir_path, 'info')
+            new_row = {'source': hdr_path_to_copy, 'dest': dir_path}
+            df_file_loc = df_file_loc.append(new_row, ignore_index=True)
             if row['DFT type'] == 'TDF':
-                res_pl_cpy = copy_payloads_tdf(dict_rev_cnt, dir_path, pl_path_to_copy, res_pl_cpy, row)
+                df_file_loc = copy_payloads_tdf(dict_rev_cnt, dir_path, pl_path_to_copy, row, df_file_loc)
+
 
             else:
-                res_pl_cpy = copy_payload(dict_rev_cnt, dir_path, pl_path_to_copy)
+                df_file_loc = copy_payload(dict_rev_cnt, dir_path, pl_path_to_copy, df_file_loc)
 
-            # increment total count
-            total_hdr_cnt += res_hdr_cpy
-            total_pl_cnt += res_pl_cpy
 
-            end_inner = time.time()
-            elapsed_inner = end_inner - start_inner
-            logger.info(f'*** Time elapsed for file storing for this pattern: {timedelta(seconds=elapsed_inner)} ***')
+
+
+    csv_name = copy_files('info', df_file_loc, dest_dir)
+    print(csv_name)
+    no_of_procs = multiprocessing.cpu_count() * 4
+
+    file_size = os.stat(csv_name).st_size
+
+    file_size_per_chunk = file_size / no_of_procs
+
+    pool = Pool(no_of_procs)
+
+    for chunk in getChunks(csv_name, file_size_per_chunk):
+        pool.apply_async(worker, (csv_name, chunk))
+
+    pool.join()
+
+    res_hdr_cpy = 1
+    dict_rev_cnt[rev] += res_hdr_cpy
+    if res_hdr_cpy:
+        logger.info(f'Header copied from Waipio {rev} path.')
+
+    # copy payload and increment counter
+    res_pl_cpy = 0
+
+
+    # increment total count
+    total_hdr_cnt += res_hdr_cpy
+    total_pl_cnt += res_pl_cpy
+
+    end_inner = time.time()
+    elapsed_inner = end_inner - start_inner
+    logger.info(f'*** Time elapsed for file storing for this pattern: {timedelta(seconds=elapsed_inner)} ***')
 
 
     logger.info(f'***** Total count of .stil.gz files stored and classified for header: {total_hdr_cnt} *****')
@@ -207,17 +249,38 @@ def store_all_zip_atpg(dest_dir, pattern_category, vector_type):
     elapsed = end - start
     logger.info(f'***** Total time elapsed for file storing and classification: {timedelta(seconds=elapsed)} *****')
 
+def getChunks(file, size):
+    f = open(file, 'rb')
+    while 1:
+        start = f.tell()
+        f.seek(int(size), 1)
+        s = f.readline()
+        yield start, f.tell() - start
+        if not s:
+            f.close()
+            break
 
-def copy_payload(dict_rev_cnt, dir_path, pl_path_to_copy):
-    res_pl_cpy = copy_files(pl_path_to_copy, dir_path, 'info')
-    dict_rev_cnt[rev] += res_pl_cpy
-    if res_pl_cpy:
-        logger.info(f'{res_pl_cpy} payload .stil.gz files downloaded successfully.')
-        logger.info((f'Payload copied from Waipio r1 path.'))
-    return res_pl_cpy
+def worker(csv_file, chunk):
+    f = open(csv_file)
+    f.seek(chunk[0])
+    for file in f.read(chunk[1]).splitlines():
+        src_dest = file.split(",")
+
+        if len(src_dest) == 2:
+            copy_files_threading(src_dest[0], src_dest[1], 'info')
+
+def copy_payload(dict_rev_cnt, dir_path, pl_path_to_copy, df_file_loc):
+    df_file_loc = df_file_loc.append({'source': pl_path_to_copy, 'dest': dir_path}, ignore_index=True)
+    return df_file_loc
+    # res_pl_cpy = copy_files(pl_path_to_copy, dir_path, 'info')
+    # dict_rev_cnt[rev] += res_pl_cpy
+    # if res_pl_cpy:
+    #     logger.info(f'{res_pl_cpy} payload .stil.gz files downloaded successfully.')
+    #     logger.info((f'Payload copied from Waipio r1 path.'))
+    # return res_pl_cpy
 
 
-def copy_payloads_tdf(dict_rev_cnt, dir_path, pl_path_to_copy, res_pl_cpy, row):
+def copy_payloads_tdf(dict_rev_cnt, dir_path, pl_path_to_copy, row, df_file_loc):
     pl_name = 'tk_atpg_tdf_lpc' + re.search("(lpc)(.*)(_)(.*)(_)", row['Vector']).group(2) + '_slc_'
     pl_zip = pl_name + '*.stil.gz'
     # get a list of paths for all payload slices
@@ -225,8 +288,9 @@ def copy_payloads_tdf(dict_rev_cnt, dir_path, pl_path_to_copy, res_pl_cpy, row):
     list_path_pl_zip = glob.glob(path_pl_zip)
     # copy payload zip files to target folder
     for zip in list_path_pl_zip:
-        res_pl_cpy += copy_payload(dict_rev_cnt, dir_path, zip)
-    return res_pl_cpy
+        df_file_loc = df_file_loc.append({'source': zip, 'dest': dir_path}, ignore_index=True)
+        #res_pl_cpy += copy_payload(dict_rev_cnt, dir_path, zip)
+    return df_file_loc
 
 
 def create_file_path(dest_dir, payload, row):
@@ -267,9 +331,10 @@ def find_value_after_regex(payload, regex_value):
     return name, split_name
 
 
-def generate_pats_txt(pattern_category, vector_type, dir_pat, dir_exec, log_name, lim, list_dirs_exclude = [], pin_group ='OUT', enable_cyc_cnt=1, block=None, freq_modes = ['NOM', 'SVS', 'TUR', 'SVSD1']):
+def generate_pats_txt(pattern_category, vector_type, dir_pat, dir_exec, log_name, lim, list_dirs_exclude = [], pin_group = 'OUT', enable_cyc_cnt=1, block=None, freq_modes = ['NOM', 'SVS', 'TUR', 'SVSD1']):
     """
     Generate a set of PATS.txt files for pattern batch execution.
+
     :param vector_type: str
         choice of vector type has PROD or RMA. As project evolves, more choices might come
     :param pattern_category: str
@@ -282,7 +347,7 @@ def generate_pats_txt(pattern_category, vector_type, dir_pat, dir_exec, log_name
         conversion log name (w/o .csv extension)
     :param lim: int
         limit for the number of patterns to host in a PATS.txt file
-    :param list_dirs_exclude_full: list. default = []
+    :param list_dirs_exclude: list. default = []
         dir of DFT patterns to EXCLUDE from PATS.TXT
     :param pin_group: str. default = 'OUT'
         pin group mask. Choices are 'IN','OUT','ALL_PINS'
@@ -296,8 +361,7 @@ def generate_pats_txt(pattern_category, vector_type, dir_pat, dir_exec, log_name
     """
     for index, mode in enumerate(freq_modes):
         sub_freq_modes = [x for x in freq_modes if x != mode]
-        list_dirs_exclude_full = list_dirs_exclude + sub_freq_modes
-
+        list_dirs_exclude.append(sub_freq_modes)
         conv_log = os.path.join(conversion_log_csv_path, log_name + '.csv')
 
         df_conv_log = pd.read_csv(conv_log)
@@ -330,17 +394,13 @@ def generate_pats_txt(pattern_category, vector_type, dir_pat, dir_exec, log_name
         do_files = []
         for root, dirs, files in os.walk(path_top_level,topdown=True):
             # exclude dirs
-            dirs[:] = [d for d in dirs if d not in list_dirs_exclude_full]
+            dirs[:] = [d for d in dirs if d not in list_dirs_exclude]
 
             for file in files:
-                if fnmatch.fnmatch(file, '*_XMD.do'):
+                if fnmatch.fnmatch(file, '*.do'):
                     # get abs paths for DO patterns
-                    modes = "|".join(freq_modes)
-                    modes_pattern = "(.*)(\\\)(" + modes + ")(\\\)(.*)"
-                    if re.search(modes_pattern, root):
-
-                        do_file = os.path.join(root,file)
-                        do_files.append(do_file)
+                    do_file = os.path.join(root,file)
+                    do_files.append(do_file)
 
         # block = os.path.basename(path_block)
         # do_files = glob.glob(path_block + '/**/*.do', recursive=True)
@@ -431,8 +491,9 @@ def main():
     # dest = r'\\qctdfsrt\prj\vlsi\vetch_pst\atpg_cdp\waipio'
 
     dest = r"C:\Users\rpenmatc\OneDrive - Qualcomm\Desktop\test_multi"
-    pattern_category = r"INT"
+    pattern_category = r"INT|SAF"
     vector_type = r"PROD"
+
 
     # filter patterns
     rev = 'r1'
@@ -442,7 +503,7 @@ def main():
 
     folder_ordering = ['Bin Si Revision', 'Block', 'DFT type', 'Vector Type', 'Vector', 'freq mode']
     map_path = r"C:\Users\rpenmatc\OneDrive - Qualcomm\Desktop\Automation csv\demo_int_saf.csv"
-    # map_path = r"C:\Users\jianingz\Desktop\freq_mode_fixed_saf.csv"
+    #map_path = r"C:\Users\jianingz\Desktop\freq_mode_fixed_saf.csv"
 
     # int_saf_map_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\c_weicya\ev100\seed_files\map_files\waipio\waipio_v1_map_test_p1.csv"
     # int_saf_map_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\c_weicya\ev100\seed_files\map_files\waipio\waipio_v1_map_052621_demo.csv"
@@ -453,21 +514,19 @@ def main():
 
     ## path to log ##
     # waipio
-    # py_log_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\atpg_cdp" + "\\" + chip_version + "\\" + rev + "\\" + r"py_log"
+    #py_log_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\atpg_cdp" + "\\" + chip_version + "\\" + rev + "\\" + r"py_log"
     py_log_path = r"C:\Users\rpenmatc\OneDrive - Qualcomm\Desktop"
 
     conversion_log_csv_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\atpg_cdp" + "\\" + chip_version + "\\" + rev + "\\" + r"\conversion_log"
     # Uncomment the below func call (store_all_zip_atpg()) to enable store and classification of STIL zip files
     set_up_logger()
-    #store_all_zip_atpg(dest, pattern_category, vector_type)
+    store_all_zip_atpg(dest, pattern_category, vector_type)
 
     ### 2. Generate pats.txt ###
     # parent directory for DFT patterns, based on SVE-EV100-1 PC
 
-
     #dir_pat = r"G:\ATPG_CDP\freq_mode_5_updated\waipio\r1_sec5lpe\ATPG"
-    dir_pat = r"E:\pattern_gen_debug"
-
+    dir_pat = r"G:\ATPG_CDP"
     # create a folder under the parent directory to host the pats.txt to be generated
     dir_exec = os.path.join(dir_pat, 'pattern_execution', 'pattern_list')
     # copy the conversion log name from ev100_vector_conversion.py after the conversion process is finished
@@ -480,7 +539,7 @@ def main():
     pin_group = 'ALL_PINS'
     # Uncomment the below func call (generate_pats_txt()) to generate pats.txt for pattern batch execution
     freq_modes = ['SVS', 'NOM', 'TUR', 'SVSD1']
-    # generate_pats_txt(pattern_category,vector_type, dir_pat, dir_exec,log_name,lim, ['5'], pin_group,1, None, freq_modes)
+    #generate_pats_txt(pattern_category,vector_type, dir_pat, dir_exec,log_name,lim, ['5'], pin_group,1, None, freq_modes)
 
 
 if __name__ == "__main__":
