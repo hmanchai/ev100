@@ -302,6 +302,7 @@ def generate_pats_txt(pattern_category, vector_type, dir_pat, dir_exec, log_name
     for index, mode in enumerate(freq_modes):
         sub_freq_modes = [x for x in freq_modes if x != mode]
         list_dirs_exclude_full = list_dirs_exclude + sub_freq_modes
+
         conv_log = os.path.join(conversion_log_csv_path, log_name + '.csv')
 
         df_conv_log = pd.read_csv(conv_log)
@@ -337,10 +338,14 @@ def generate_pats_txt(pattern_category, vector_type, dir_pat, dir_exec, log_name
             dirs[:] = [d for d in dirs if d not in list_dirs_exclude_full]
 
             for file in files:
-                if fnmatch.fnmatch(file, '*.do'):
+                if fnmatch.fnmatch(file, '*_XMD.do'):
                     # get abs paths for DO patterns
-                    do_file = os.path.join(root,file)
-                    do_files.append(do_file)
+                    modes = "|".join(freq_modes)
+                    modes_pattern = "(.*)(\\\)(" + modes + ")(\\\)(.*)"
+                    if re.search(modes_pattern, root):
+
+                        do_file = os.path.join(root,file)
+                        do_files.append(do_file)
 
         # block = os.path.basename(path_block)
         # do_files = glob.glob(path_block + '/**/*.do', recursive=True)
