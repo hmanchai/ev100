@@ -24,9 +24,9 @@ updated_data_time = time.strftime("%Y%m%d-%H%M%S")
 py_log_name = 'py_conversion_' + updated_data_time + '_test.log'
 
 ## mapping files ##
-tdf_map_path = ""
+map_path = ""
 # tdf_map_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\c_weicya\ev100\seed_files\map_files\lahaina\Lahaina_V2p1_TDF_mapping_sheet.csv"
-int_saf_map_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\c_weicya\ev100\seed_files\map_files\waipio\waipio_v1_map_052621_demo.csv"
+map_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\c_weicya\ev100\seed_files\map_files\waipio\waipio_v1_map_052621_demo.csv"
 
 ## seed files ##
 velocity_dft_cfg_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\c_weicya\ev100\seed_files\velocity_cfg\waipio\waipio_WY_dft_universal_v1.cfg"
@@ -395,13 +395,13 @@ def modify_cfg(path_stil_files, pattern_category):
 
             if pattern_category.lower() == 'tdf':
                 #grab pattern name from map file
-                df_map = pd.read_csv(tdf_map_path)
+                df_map = pd.read_csv(map_path)
                 #for TDF, header alone is sufficient to identify pattern name in map file
                 pattern_name = df_map.loc[df_map['Header'] == hdr_name, 'Pattern'].values[0]
                 # add BURST section to the end of CFG file; NOTE: header needs to be listed above payloads!
                 list_lines = ["\nBURST  " + pattern_name, "\n  " + hdr_name] + list_pl_name + ["\nEND BURST"]
             elif pattern_category.lower() in ['int','saf']:
-                df_map = pd.read_csv(int_saf_map_path)
+                df_map = pd.read_csv(map_path)
                 #for INT/SAF, both header and payload are needed to identify pattern name in map file
                 filter = (df_map['Header vector name'] == hdr_name) & (df_map['Payload vector name'] == pl_name)
                 pattern_name = df_map.loc[filter, 'Pattern name'].values[0]

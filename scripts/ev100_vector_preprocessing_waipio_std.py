@@ -441,7 +441,7 @@ def main():
     # rev -> dft type -> vector type -> lpu/lpc -> domain name -> freq mode
 
     folder_ordering = ['Bin Si Revision', 'Block', 'DFT type', 'Vector Type', 'Vector', 'freq mode']
-    map_path = r"C:\Users\rpenmatc\OneDrive - Qualcomm\Desktop\Automation csv\demo_int_saf.csv"
+    map_path = r"C:\Users\rpenmatc\OneDrive - Qualcomm\Desktop\Automation csv\freq_mode_fixed_saf.csv"
     # map_path = r"C:\Users\jianingz\Desktop\freq_mode_fixed_saf.csv"
 
     # int_saf_map_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\c_weicya\ev100\seed_files\map_files\waipio\waipio_v1_map_test_p1.csv"

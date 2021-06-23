@@ -22,8 +22,8 @@ from ev100_vector_preprocessing_lahaina import create_folder, load_filter_map
 py_log_name = 'TDF_PROD_TOP_conversion_020821.log'
 
 ## map files ##
-tdf_map_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\c_weicya\ev100\seed_files\map_files\lahaina\Lahaina_V2p1_TDF_mapping_sheet.csv"
-int_saf_map_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\c_weicya\ev100\seed_files\map_files\lahaina\Lahaina_R2p1_ATPG_mapping.csv"
+map_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\c_weicya\ev100\seed_files\map_files\lahaina\Lahaina_V2p1_TDF_mapping_sheet.csv"
+map_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\c_weicya\ev100\seed_files\map_files\lahaina\Lahaina_R2p1_ATPG_mapping.csv"
 
 ## seed files ##
 velocity_dft_cfg_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\c_weicya\ev100\seed_files\velocity_cfg\lahaina\lahaina_WCY_dft_universal.cfg"
@@ -390,13 +390,13 @@ def modify_cfg(path_stil_files, pattern_category):
 
             if pattern_category.lower() == 'tdf':
                 #grab pattern name from map file
-                df_map = pd.read_csv(tdf_map_path)
+                df_map = pd.read_csv(map_path)
                 #for TDF, header alone is sufficient to identify pattern name in map file
                 pattern_name = df_map.loc[df_map['Header'] == hdr_name, 'Pattern'].values[0]
                 # add BURST section to the end of CFG file; NOTE: header needs to be listed above payloads!
                 list_lines = ["\nBURST  " + pattern_name, "\n  " + hdr_name] + list_pl_name + ["\nEND BURST"]
             elif pattern_category.lower() in ['int','saf']:
-                df_map = pd.read_csv(int_saf_map_path)
+                df_map = pd.read_csv(map_path)
                 #for INT/SAF, both header and payload are needed to identify pattern name in map file
                 filter = (df_map['Header vector name'] == hdr_name) & (df_map['Payload vector name'] == pl_name)
                 pattern_name = df_map.loc[filter, 'Pattern name'].values[0]

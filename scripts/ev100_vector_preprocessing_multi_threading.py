@@ -98,17 +98,7 @@ def copy_files(log_level, df_file_loc, dir_path):
     df_file_loc.to_csv(temp_csv, index=None, sep=',', header=False, mode='a')
     csv_file.close()
     return temp_csv
-    # try:
-    #    df_file_loc.to_csv(dir_path, index=None, sep='\t', header=False, mode='a')
-    # except Exception:
-    #     logger.exception(f'Error! Cannot copy: {path_to_file}')
-    #     return 0
-    # else:
-    #     if log_level == 'info':
-    #         logger.info(f'File copied: {os.path.basename(path_to_file)}')
-    #     elif log_level == 'debug':
-    #         logger.debug(f'File copied: {os.path.basename(path_to_file)}')
-    #     return 1
+
 
 def copy_files_threading(path_to_file, dest_dir, log_level):
     """
@@ -130,16 +120,7 @@ def copy_files_threading(path_to_file, dest_dir, log_level):
         logger.info(f'File copied: {os.path.basename(path_to_file)}')
     elif log_level == 'debug':
         logger.debug(f'File copied: {os.path.basename(path_to_file)}')
-    # try:
-    #     print("start copy")
-    #     shutil.copy(path_to_file, dest_dir)
-    #     print("end copy")
-    # except Exception:
-    #     logger.exception(f'Error! Cannot copy: {path_to_file}')
-    #     return 0
-    # else:
 
-    #     return 1
 
 
 def store_all_zip_atpg(dest_dir, pattern_category, vector_type):
@@ -336,10 +317,9 @@ def find_value_after_regex(payload, regex_value):
     return name, split_name
 
 
-def generate_pats_txt(pattern_category, vector_type, dir_pat, dir_exec, log_name, lim, list_dirs_exclude = [], pin_group = 'OUT', enable_cyc_cnt=1, block=None, freq_modes = ['NOM', 'SVS', 'TUR', 'SVSD1']):
+def generate_pats_txt(pattern_category, vector_type, dir_pat, dir_exec, log_name, lim, list_dirs_exclude = [], pin_group ='OUT', enable_cyc_cnt=1, block=None, freq_modes = ['NOM', 'SVS', 'TUR', 'SVSD1']):
     """
     Generate a set of PATS.txt files for pattern batch execution.
-
     :param vector_type: str
         choice of vector type has PROD or RMA. As project evolves, more choices might come
     :param pattern_category: str
@@ -352,7 +332,7 @@ def generate_pats_txt(pattern_category, vector_type, dir_pat, dir_exec, log_name
         conversion log name (w/o .csv extension)
     :param lim: int
         limit for the number of patterns to host in a PATS.txt file
-    :param list_dirs_exclude: list. default = []
+    :param list_dirs_exclude_full: list. default = []
         dir of DFT patterns to EXCLUDE from PATS.TXT
     :param pin_group: str. default = 'OUT'
         pin group mask. Choices are 'IN','OUT','ALL_PINS'
@@ -366,7 +346,8 @@ def generate_pats_txt(pattern_category, vector_type, dir_pat, dir_exec, log_name
     """
     for index, mode in enumerate(freq_modes):
         sub_freq_modes = [x for x in freq_modes if x != mode]
-        list_dirs_exclude.append(sub_freq_modes)
+        list_dirs_exclude_full = list_dirs_exclude + sub_freq_modes
+
         conv_log = os.path.join(conversion_log_csv_path, log_name + '.csv')
 
         df_conv_log = pd.read_csv(conv_log)
@@ -399,13 +380,17 @@ def generate_pats_txt(pattern_category, vector_type, dir_pat, dir_exec, log_name
         do_files = []
         for root, dirs, files in os.walk(path_top_level,topdown=True):
             # exclude dirs
-            dirs[:] = [d for d in dirs if d not in list_dirs_exclude]
+            dirs[:] = [d for d in dirs if d not in list_dirs_exclude_full]
 
             for file in files:
-                if fnmatch.fnmatch(file, '*.do'):
+                if fnmatch.fnmatch(file, '*_XMD.do'):
                     # get abs paths for DO patterns
-                    do_file = os.path.join(root,file)
-                    do_files.append(do_file)
+                    modes = "|".join(freq_modes)
+                    modes_pattern = "(.*)(\\\)(" + modes + ")(\\\)(.*)"
+                    if re.search(modes_pattern, root):
+
+                        do_file = os.path.join(root,file)
+                        do_files.append(do_file)
 
         # block = os.path.basename(path_block)
         # do_files = glob.glob(path_block + '/**/*.do', recursive=True)
@@ -507,7 +492,7 @@ def main():
     # rev -> dft type -> vector type -> lpu/lpc -> domain name -> freq mode
 
     folder_ordering = ['Bin Si Revision', 'Block', 'DFT type', 'Vector Type', 'Vector', 'freq mode']
-    map_path = r"C:\Users\rpenmatc\OneDrive - Qualcomm\Desktop\Automation csv\demo_int_saf.csv"
+    map_path = r"C:\Users\rpenmatc\OneDrive - Qualcomm\Desktop\Automation csv\freq_mode_fixed_saf.csv"
     #map_path = r"C:\Users\jianingz\Desktop\freq_mode_fixed_saf.csv"
 
     # int_saf_map_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\c_weicya\ev100\seed_files\map_files\waipio\waipio_v1_map_test_p1.csv"

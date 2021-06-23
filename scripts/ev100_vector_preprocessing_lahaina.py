@@ -12,8 +12,8 @@ from pathlib import Path
 
 ## map files ##
 #lahaina
-tdf_map_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\c_weicya\ev100\seed_files\map_files\lahaina\Lahaina_V2p1_TDF_mapping_sheet.csv"
-int_saf_map_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\c_weicya\ev100\seed_files\map_files\lahaina\Lahaina_R2p1_ATPG_mapping.csv"
+map_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\c_weicya\ev100\seed_files\map_files\lahaina\Lahaina_V2p1_TDF_mapping_sheet.csv"
+map_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\c_weicya\ev100\seed_files\map_files\lahaina\Lahaina_R2p1_ATPG_mapping.csv"
 
 ## source path for patterns ##
 #lahaina
@@ -48,9 +48,9 @@ def load_filter_map(pattern_category, vector_type):
     """load and filter map file"""
     if pattern_category == 'TDF':
         vector_type_col = 'Vector Type'
-        map_path = tdf_map_path
+        map_path = map_path
     elif pattern_category in ('SAF', 'INT'):
-        map_path = int_saf_map_path
+        map_path = map_path
         vector_type_col = 'Header Vector type'
 
     df_map_original = pd.read_csv(map_path)
