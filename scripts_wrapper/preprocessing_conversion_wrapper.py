@@ -127,6 +127,19 @@ def main():
                 with open(json_filename, 'r') as json_file:
                     input_dic = json.load(json_file)
                     globals().update(input_dic)
+                    change_log_files = str(input(
+                        "Would you like to first update log filenames?\nEnter Y/N:\n"))
+                    if change_log_files.lower() == 'y':
+                        py_log_name = str(input(
+                            "Enter new pylog filename: \n # ENTER NO INPUT - DEFAULT \"py_conversion_" + updated_date_time + ".log\"\n ") or 'py_conversion_' + updated_date_time + '.log')
+                        input_dic["py_log_name"] = py_log_name
+                        if log_name != "":
+                            log_name = str(input(
+                                "Enter new conversion log filename: \n # ENTER NO INPUT - DEFAULT \"conversion_log_" + pattern_category + "_" + vector_type + "_" + updated_date + ".log" + "\"\n ") or 'conversion_log_' + pattern_category + "_" + vector_type + "_" + updated_date + ".log")
+                            input_dic["log_name"] = log_name
+                        with open(json_filename, 'w') as outfile:
+                            json.dump(input_dic, outfile)
+
                     preprocess_convert = wrapper(rev, chip_version, py_log_path, py_log_name, pattern_category, vector_type,
                                              updated_date_time)
                 break
