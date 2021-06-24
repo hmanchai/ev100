@@ -1,0 +1,12 @@
+{
+  "rev": "r1",
+  "chip_version": "waipio",
+  "py_log_name": "py_conversion_20210624-173221.log",
+  "py_log_path": "\\\\qctdfsrt\\prj\\vlsi\\vetch_pst\\atpg_cdp\\waipio\\r1\\py_log",
+  "pattern_category": "INT|SAF",
+  "vector_type": "PROD",
+  "dest": "C:\\Users\\rpenmatc\\OneDrive - Qualcomm\\Desktop\\test_multi",
+  "copy_zip": "N",
+  "convert_velocity": "N",
+  "generate_pats": "N"
+}

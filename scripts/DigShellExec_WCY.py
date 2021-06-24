@@ -12,7 +12,7 @@ import sys
 # import subprocess
 import pandas as pd
 import fnmatch
-from ev100_dlog_postprocess import dlog_csv_post_process
+#from ev100_dlog_postprocess import dlog_csv_post_process
 # from ev100_vector_conversion_lahaina import sorted_alphanumeric
 
 
