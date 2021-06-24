@@ -339,7 +339,7 @@ class Generate_Pats():
             except Exception:
                 self.logger.exception(f"Error! Could not create directory {dir}")
 
-    def generate_pats_txt(self, pattern_category, vector_type, dir_pat, dir_exec, log_name, lim, list_dirs_exclude = [], pin_group ='OUT', enable_cyc_cnt=1, block=None, freq_modes = ['NOM', 'SVS', 'TUR', 'SVSD1']):
+    def generate_pats_txt(self, pattern_category, vector_type, dir_pat, dir_exec, log_name, lim, list_dirs_exclude = [], pin_group ='OUT', enable_cyc_cnt=1, blocks=[], freq_modes = ['NOM', 'SVS', 'TUR', 'SVSD1']):
         """
         Generate a set of PATS.txt files for pattern batch execution.
         :param vector_type: str
@@ -387,11 +387,12 @@ class Generate_Pats():
 
             if pattern_category.lower() in 'tdf':
                 # dir to grab DO from
-                path_top_level = os.path.join(dir_pat,pattern_category,vector_type, block)
-                # dir to export PATS.txt to
-                dir_sub = os.path.join(dir_exec, pattern_category, vector_type, block)
-                # prefix for PATS.txt file name
-                pre_fix = 'PATS_' + pattern_category + '_' + vector_type + '_' + block + '_'
+                for block in blocks:
+                    path_top_level = os.path.join(dir_pat, block, pattern_category,vector_type)
+                    # dir to export PATS.txt to
+                    dir_sub = os.path.join(dir_exec, block, pattern_category, vector_type)
+                    # prefix for PATS.txt file name
+                    pre_fix = 'PATS_' + pattern_category + '_' + vector_type + '_' + block + '_'
             elif pattern_category.lower() in ['int','saf']:
                 path_top_level = os.path.join(dir_pat, pattern_category, vector_type)
                 dir_sub = os.path.join(dir_exec, mode, pattern_category, vector_type)
