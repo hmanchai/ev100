@@ -44,11 +44,11 @@ class wrapper():
                  self.updated_date_time, self.logger, dest, map_path, par_vector_path_r1)
         preprocess.store_all_zip_atpg(dest, self.pattern_category, self.vector_type)
 
-    def velocity_conversion(self, dest, blocks, log_name, velocity_dft_cfg_path, patch_timesets_path,
-                            patch_timesets_50mhz_path, enable_del_zip=False):
+    def velocity_conversion(self, conversion_log_csv_path, dest, blocks, log_name, velocity_dft_cfg_path, patch_timesets_path,
+                            patch_timesets_50mhz_path, map_path, enable_del_zip=False):
 
         conversion = ev100_vector_conversion_waipio_std.Conversion(self.rev, self.chip_version, self.py_log_path, self.py_log_name, self.pattern_category, self.vector_type,
-                 self.updated_date_time, self.logger, dest, blocks, log_name, velocity_dft_cfg_path, patch_timesets_path, patch_timesets_50mhz_path, enable_del_zip)
+                 self.updated_date_time, self.logger, conversion_log_csv_path, dest, blocks, log_name, velocity_dft_cfg_path, patch_timesets_path, patch_timesets_50mhz_path, map_path, enable_del_zip)
         version_num = self.rev + "_sec5lpe"
         rev_path = os.path.join(dest, self.chip_version, version_num)
 
@@ -65,13 +65,17 @@ class wrapper():
 
     def generate_pats_txt(self, conversion_log_csv_path, dir_pat, log_name, lim, list_dirs_exclude = [], pin_group ='OUT', enable_cyc_cnt=1, blocks = [], freq_modes = ['NOM', 'SVS', 'TUR', 'SVSD1']):
         dir_exec = os.path.join(dir_pat, self.chip_version, 'pattern_execution', 'pattern_list')
+        version_num = self.rev + "_sec5lpe"
+        dir_pat = os.path.join(dir_pat, self.chip_version, version_num)
         print(conversion_log_csv_path)
         preprocess = ev100_vector_preprocessing_multi_threading.Generate_Pats(conversion_log_csv_path, self.logger)
         pattern_categories = self.pattern_category.split("|")
-        for pat_cat in pattern_categories:
-            vector_types = self.vector_type.split("|")
-            for type in vector_types:
-                preprocess.generate_pats_txt(pat_cat, type, dir_pat, dir_exec, log_name, lim, list_dirs_exclude, pin_group, enable_cyc_cnt, blocks, freq_modes)
+        for block in blocks:
+            dir_pat = os.path.join(dir_pat, block)
+            for pat_cat in pattern_categories:
+                vector_types = self.vector_type.split("|")
+                for type in vector_types:
+                    preprocess.generate_pats_txt(pat_cat, type, dir_pat, dir_exec, log_name, lim, list_dirs_exclude, pin_group, enable_cyc_cnt, blocks, freq_modes)
 
 
 def main():
@@ -135,11 +139,13 @@ def main():
                             "Enter new pylog filename: \n # ENTER NO INPUT - DEFAULT \"py_conversion_" + updated_date_time + ".log\"\n ") or 'py_conversion_' + updated_date_time + '.log')
                         input_dic["py_log_name"] = py_log_name
                         if log_name != "":
+                            pat_name = pattern_category.replace("|", "_")
+                            vec_name = vector_type.replace("|", "_")
                             log_name = str(input(
-                                "Enter new conversion log filename: \n # ENTER NO INPUT - DEFAULT \"conversion_log_" + pattern_category + "_" + vector_type + "_" + updated_date + "\"\n ") or 'conversion_log_' + pattern_category + "_" + vector_type + "_" + updated_date)
+                                "Enter new conversion log filename: \n # ENTER NO INPUT - DEFAULT \"conversion_log_" + pat_name + "_" + vec_name + "_" + updated_date + "\"\n ") or 'conversion_log_' + pat_name+ "_" + vec_name + "_" + updated_date)
                             input_dic["log_name"] = log_name
                         with open(json_filename, 'w') as outfile:
-                            json.dump(input_dic, outfile)
+                            json.dump(input_dic, outfile, indent = 2)
 
                     preprocess_convert = wrapper(rev, chip_version, py_log_path, py_log_name, pattern_category, vector_type,
                                              updated_date_time)
@@ -154,7 +160,7 @@ def main():
         preprocess_convert.copy_stil_zip_files(dest, map_path, par_vector_path_r1)
 
     if convert_velocity == 'y':
-        preprocess_convert.velocity_conversion(dest, blocks, log_name, velocity_dft_cfg_path, patch_timesets_path, patch_timesets_50mhz_path, enable_del_zip)
+        preprocess_convert.velocity_conversion(conversion_log_csv_path, dest, blocks, log_name, velocity_dft_cfg_path, patch_timesets_path, patch_timesets_50mhz_path, map_path, enable_del_zip)
 
     if generate_pats == 'y':
         preprocess_convert.generate_pats_txt(conversion_log_csv_path, dest, log_name, lim, list_dirs_exclude, pin_group, enable_cyc_cnt, blocks, freq_modes)
@@ -193,9 +199,10 @@ def needed_conversion_pats(chip_version, input_dic, pattern_category, rev,
     # make list based on dest
     blocks = blocks_str.split("|")
     input_dic['blocks'] = blocks
-
+    pat_name = pattern_category.replace("|", "_")
+    vec_name = vector_type.replace("|", "_")
     log_name = str(input(
-        "Enter conversion log filename: \n # ENTER NO INPUT - DEFAULT \"conversion_log_" + pattern_category + "_" + vector_type + "_" + updated_date  + "\"\n ") or 'conversion_log_' + pattern_category + "_" + vector_type + "_" + updated_date)
+        "Enter conversion log filename: \n # ENTER NO INPUT - DEFAULT \"conversion_log_" + pat_name + "_" + vec_name + "_" + updated_date  + "\"\n ") or 'conversion_log_' + pat_name + "_" + vec_name + "_" + updated_date)
     input_dic['log_name'] = log_name
 
     conversion_log_csv_path = str(input("Enter conversion log file path: \n # ENTER NO INPUT - DEFAULT \"" +

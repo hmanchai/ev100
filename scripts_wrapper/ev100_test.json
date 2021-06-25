@@ -1,16 +1,16 @@
 {
   "rev": "r1",
   "chip_version": "waipio",
-  "py_log_name": "py_conversion_20210624-173255.log",
+  "py_log_name": "py_conversion_20210625-102900.log",
   "py_log_path": "\\\\qctdfsrt\\prj\\vlsi\\vetch_pst\\atpg_cdp\\waipio\\r1\\py_log",
   "pattern_category": "INT|SAF",
   "vector_type": "PROD",
-  "dest": "C:\\Users\\rpenmatc\\OneDrive - Qualcomm\\Desktop\\test_multi",
-  "copy_zip": "y",
+  "dest": "E:\\pattern_gen_debug",
+  "copy_zip": "n",
   "convert_velocity": "y",
-  "generate_pats": "N",
+  "generate_pats": "y",
   "par_vector_path_r1": "\\\\qctdfsrt\\prj\\qct\\chips\\waipio\\sandiego\\test\\vcd\\r1_sec5lpe\\tester_vcd",
-  "map_path": "C:\\Users\\rpenmatc\\OneDrive - Qualcomm\\Desktop\\Automation csv\\demo_int_saf.csv",
+  "map_path": "E:\\pattern_gen_debug\\demo_int_saf.csv",
   "velocity_dft_cfg_path": "\\\\qctdfsrt\\prj\\vlsi\\vetch_pst\\c_weicya\\ev100\\seed_files\\velocity_cfg\\waipio\\waipio_WY_dft_universal_v1.cfg",
   "patch_timesets_path": "\\\\qctdfsrt\\prj\\vlsi\\vetch_pst\\c_weicya\\ev100\\seed_files\\patch_files\\waipio\\patch_timesets.txt",
   "patch_timesets_50mhz_path": "\\\\qctdfsrt\\prj\\vlsi\\vetch_pst\\c_weicya\\ev100\\seed_files\\patch_files\\lahaina\\patch_timesets_50MHz.txt",
@@ -18,6 +18,18 @@
   "blocks": [
     "ATPG"
   ],
-  "log_name": "conversion_log_INT|SAF_PROD_20210624",
-  "conversion_log_csv_path": "\\\\qctdfsrt\\prj\\vlsi\\vetch_pst\\atpg_cdp\\waipio\\r1\\conversion_log"
+  "log_name": "conversion_test_log",
+  "conversion_log_csv_path": "\\\\qctdfsrt\\prj\\vlsi\\vetch_pst\\atpg_cdp\\waipio\\r1\\conversion_log",
+  "lim": 1,
+  "pin_group": "ALL_PINS",
+  "freq_modes": [
+    "SVS",
+    "NOM",
+    "TUR",
+    "SVSD1"
+  ],
+  "enable_cyc_cnt": 1,
+  "list_dirs_exclude": [
+    ""
+  ]
 }

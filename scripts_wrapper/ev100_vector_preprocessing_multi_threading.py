@@ -14,6 +14,7 @@ import subprocess
 monkey.patch_all()
 
 from gevent.pool import Pool
+#python -m pip install pycopier
 
 
 class Preprocess():
@@ -93,7 +94,6 @@ class Preprocess():
         :return: bool
             0 if failed; 1 if successful
         """
-
         temp_csv = os.path.join(dir_path, 'temp.csv')
         csv_file = open(temp_csv, "w")
         df_file_loc.to_csv(temp_csv, index=None, sep=',', header=False, mode='a')
@@ -115,8 +115,8 @@ class Preprocess():
             0 if failed; 1 if successful
         """
 
-        cmd = "pycopier " + "\"" + path_to_file + "\"" + " " + "\"" + dest_dir + "\""
-        subprocess.call(cmd)
+        cmd = "python -m pycopier " + "\"" + path_to_file + "\"" + " " + "\"" + dest_dir + "\""
+        subprocess.call(cmd, shell = True)
         if log_level == 'info':
             self.logger.info(f'File copied: {os.path.basename(path_to_file)}')
         elif log_level == 'debug':
@@ -367,11 +367,11 @@ class Generate_Pats():
             frequency mode used for folder organization mode/pattern_category/vector_type
         """
         for index, mode in enumerate(freq_modes):
+
             sub_freq_modes = [x for x in freq_modes if x != mode]
             list_dirs_exclude_full = list_dirs_exclude + sub_freq_modes
 
             conv_log = os.path.join(self.conversion_log_csv_path, log_name + '.csv')
-
             df_conv_log = pd.read_csv(conv_log)
 
             pin_group = pin_group  # OUT, ALL_PINS
@@ -463,7 +463,6 @@ class Generate_Pats():
                 for do_file in do_files[start:end]:
 
                     do_file_name = os.path.basename(do_file)
-
                     if enable_cyc_cnt:
 
                         try:

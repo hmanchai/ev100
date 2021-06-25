@@ -16,7 +16,9 @@ from pathlib import Path
 
 class Conversion:
     def __init__(self, rev, chip_version, py_log_path, py_log_name, pattern_category, vector_type,
-                 updated_date_time, logger, dest, blocks, log_name, velocity_dft_cfg_path, patch_timesets_path, patch_timesets_50mhz_path, enable_del_zip):
+                 updated_date_time, logger, conversion_log_csv_path, dest, blocks, log_name, velocity_dft_cfg_path, patch_timesets_path,
+                 patch_timesets_50mhz_path, map_path, enable_del_zip):
+        self.map_path = map_path
         self.rev = rev
         self.chip_version = chip_version
         self.updated_date_time = updated_date_time
@@ -32,7 +34,21 @@ class Conversion:
         self.patch_timesets_path = patch_timesets_path
         self.patch_timesets_50mhz_path = patch_timesets_50mhz_path
         self.enable_del_zip = enable_del_zip
+        self.conversion_log_csv_path = conversion_log_csv_path
 
+    def create_folder(self, dir):
+        """
+        Create the directory if not exists.
+
+        :param dir: str
+            directory to create
+        """
+        if not os.path.exists(dir):
+            try:
+                os.makedirs(dir)
+                self.logger.debug(f'Directory created: {dir}')
+            except Exception:
+                self.logger.exception(f"Error! Could not create directory {dir}")
     # def set_up_logger(self):
     #     global logger, updated_data_time
     #     # set up self.logger
@@ -399,9 +415,10 @@ class Conversion:
                     df_map = pd.read_csv(self.map_path)
 
                     #for INT/SAF, both header and payload are needed to identify pattern name in map file
-                    stripped_pl = pl_name[8:]
+                    #stripped_pl = pl_name[8:]
                     if pattern_category.lower() in ['int']:
-                        filter = (hdr_name == df_map['header']) & (stripped_pl == df_map['payload'])
+                        filter = (hdr_name == df_map['header']) & (pl_name == df_map['payload'])
+
                     else:
                         filter = (hdr_name == df_map['header'])
 
@@ -820,8 +837,9 @@ class Conversion:
                 self.logger.exception('Error! No csv file exists. Need to create one first!')
         else:
             # mode = 'w'
-            csv_to_edit = os.path.join(self.conversion_log_csv_path,log_name + '.csv')
+            csv_to_edit = os.path.join(self.conversion_log_csv_path, log_name + '.csv')
             if not os.path.exists(csv_to_edit):
+                print(csv_to_edit)
                 with open(csv_to_edit, 'w', newline='') as file:
                     writer = csv.writer(file)
                     writer.writerow(header)
