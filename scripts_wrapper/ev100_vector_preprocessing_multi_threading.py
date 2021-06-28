@@ -407,13 +407,14 @@ class Generate_Pats():
 
                 for file in files:
                     if fnmatch.fnmatch(file, '*_XMD.do'):
+
                         # get abs paths for DO patterns
                         modes = "|".join(freq_modes)
                         modes_pattern = "(.*)(\\\)(" + modes + ")(\\\)(.*)"
                         if re.search(modes_pattern, root):
-
-                            do_file = os.path.join(root,file)
-                            do_files.append(do_file)
+                            if df_conv_log['pattern_name'].str.contains(file).any():
+                                do_file = os.path.join(root,file)
+                                do_files.append(do_file)
 
             # block = os.path.basename(path_block)
             # do_files = glob.glob(path_block + '/**/*.do', recursive=True)
