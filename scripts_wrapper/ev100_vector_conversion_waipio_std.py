@@ -11,12 +11,18 @@ from datetime import timedelta
 import calendar
 import logging
 from pathlib import Path
+from ev100_vector_preprocessing_multi_threading import CreateFolder
 
-#from ev100_vector_preprocessing_lahaina import create_folder, load_filter_map
+
+# from ev100_vector_preprocessing_lahaina import create_folder, load_filter_map
 
 class Conversion:
+    """
+    Convert patterns from STIL to DO format
+    """
     def __init__(self, rev, chip_version, py_log_path, py_log_name, pattern_category, vector_type,
-                 updated_date_time, logger, conversion_log_csv_path, dest, blocks, log_name, velocity_dft_cfg_path, patch_timesets_path,
+                 updated_date_time, logger, conversion_log_csv_path, dest, blocks, log_name, velocity_dft_cfg_path,
+                 patch_timesets_path,
                  patch_timesets_50mhz_path, map_path, enable_del_zip):
         self.map_path = map_path
         self.rev = rev
@@ -35,20 +41,8 @@ class Conversion:
         self.patch_timesets_50mhz_path = patch_timesets_50mhz_path
         self.enable_del_zip = enable_del_zip
         self.conversion_log_csv_path = conversion_log_csv_path
+        self.make_folder = CreateFolder()
 
-    def create_folder(self, dir):
-        """
-        Create the directory if not exists.
-
-        :param dir: str
-            directory to create
-        """
-        if not os.path.exists(dir):
-            try:
-                os.makedirs(dir)
-                self.logger.debug(f'Directory created: {dir}')
-            except Exception:
-                self.logger.exception(f"Error! Could not create directory {dir}")
     # def set_up_logger(self):
     #     global logger, updated_data_time
     #     # set up self.logger
@@ -70,7 +64,6 @@ class Conversion:
     #
     #     logger.addHandler(file_handler)
     #     logger.addHandler(stream_handler)
-
 
     # def copy_all_zip(self, pattern_category, vector_type, local_loc):
     #     """
@@ -144,8 +137,7 @@ class Conversion:
     #         self.logger.info(f'**** Total time elapsed for file transfer: {timedelta(seconds=elapsed)} ****')
     #
 
-
-    def traverse_levels(self, par_dir,pattern_category,vector_type, log_name, enable_del_zip, list_dirs_exclude=[]):
+    def traverse_levels(self, par_dir, pattern_category, vector_type, log_name, enable_del_zip, list_dirs_exclude=[]):
         """
         The central function to execute conversion related actions across all levels of dir
         par_dir can be any level of dir as the entry point
@@ -167,22 +159,23 @@ class Conversion:
         dict = {}
         if pattern_category == 'TDF':
             # list_attr = ['mode','domain','block','vector_type','pattern_category']
-            list_attr = ['mode','domain','block']
+            list_attr = ['mode', 'domain', 'block']
         start = time.time()
         # traverse file structure from top down
-        for (root,dirs,files) in os.walk(par_dir,topdown=True):
+        for (root, dirs, files) in os.walk(par_dir, topdown=True):
             # exclude dirs
             dirs[:] = [d for d in dirs if d not in list_dirs_exclude]
 
             for file in files:
                 # find the level of dir containing stil zip files and process
-                if fnmatch.fnmatch(file,'*.stil.gz'):
+                if fnmatch.fnmatch(file, '*.stil.gz'):
                     if pattern_category.lower() == 'tdf':
                         dict['mode'] = os.path.basename(Path(root))
                         for i, attr in enumerate(list_attr[1:]):
                             dict[attr] = os.path.basename(Path(root).parents[i])
-                        self.logger.info(f"\n**** Currently processing {pattern_category} {vector_type} {dict['block']} {dict['domain']} {dict['mode']} ****")
-                    elif pattern_category.lower() in ['int','saf']:
+                        self.logger.info(
+                            f"\n**** Currently processing {pattern_category} {vector_type} {dict['block']} {dict['domain']} {dict['mode']} ****")
+                    elif pattern_category.lower() in ['int', 'saf']:
                         self.logger.info(
                             f"\n**** Currently processing {pattern_category} {vector_type} pattern from: {root} ****")
                     # call processing func
@@ -194,12 +187,12 @@ class Conversion:
                         self.logger.exception('Error! Conversion related actions not finished completely.')
                     end_loop = time.time()
                     elapse_loop = end_loop - start_loop
-                    self.logger.info(f'**** Time elapsed for this pattern processing: {timedelta(seconds=elapse_loop)} ****')
+                    self.logger.info(
+                        f'**** Time elapsed for this pattern processing: {timedelta(seconds=elapse_loop)} ****')
                     break
         end = time.time()
         elapse = end - start
         self.logger.info(f'====>> Total time elapsed for entire process: {timedelta(seconds=elapse)} <<====\n')
-
 
     def convert_all_pats(self, path_stil_files, pattern_category, vector_type, log_name, enable_del_zip):
         """
@@ -227,7 +220,7 @@ class Conversion:
             # modify Velocity CFG to add BURST block
             self.modify_cfg(path_stil_files, pattern_category)
             # convert STIL to DP, func has internal self.logger and timer
-            conv_result = self.convert_stil_files(path_stil_files,pattern_category)
+            conv_result = self.convert_stil_files(path_stil_files, pattern_category)
             if not conv_result:
                 self.logger.error('Error! Conversion fails, so no further steps will be executed.')
             else:
@@ -245,7 +238,7 @@ class Conversion:
                     if pattern_category.lower() == 'tdf':
                         new_period = 16
                     # for INT, SAF, change timing to 20ns (50MHz)
-                    elif pattern_category.lower() in ['int','saf']:
+                    elif pattern_category.lower() in ['int', 'saf']:
                         new_period = 20
                     change_period = True
                     period_initial = self.change_timing(path_stil_files, new_period)
@@ -255,22 +248,24 @@ class Conversion:
                     self.logger.info(f'Extracted cycle count is {cyc_cnt}')
                     # add pingroup info to .h file
                     # TODO: temporarily comment out for demo on 5/26/21 until waipio patch files are fully prepared
-                    #patch_timesets_header(path_stil_files, pattern_category)
+                    # patch_timesets_header(path_stil_files, pattern_category)
                     # remove extra pingroups from slc combination
                     self.remove_extra_pingroup(path_stil_files)
                     # compile DP to DO, func has internal self.logger and timer
                     compile_err, do_file = self.compile_do_files(path_stil_files)
                     # log final DO pattern info to csv
-                    self.log_conversion_info(path_stil_files,pattern_category,vector_type,compile_err,do_file,change_period,period_initial,new_period,cyc_cnt,log_name)
+                    self.log_conversion_info(path_stil_files, pattern_category, vector_type, compile_err, do_file,
+                                             change_period, period_initial, new_period, cyc_cnt, log_name)
 
                 except Exception:
                     self.logger.exception('Error! Conversion related actions not finished completely.')
                 else:
-                    if not compile_err: # in case compilation fails but no traceback error returned
+                    if not compile_err:  # in case compilation fails but no traceback error returned
                         self.logger.info('All conversion related actions completed.')
                     if enable_del_zip:
                         # delete ZIP
                         self.del_zip(path_stil_files)
+
     def temp_recompile(self, path_stil_files):
         """
         For temporary use only: to remoe extra pin groups and re-compile patterns
@@ -287,7 +282,7 @@ class Conversion:
             if not compile_err:  # in case compilation fails but no traceback error returned
                 self.logger.info('Pingroup removal and re-compilation actions completed.')
 
-    def unzip_n_rename(self,path_stil_files):
+    def unzip_n_rename(self, path_stil_files):
         """
         unzip .gz files and match .stil file names to .gz file names
         NOTE: double unzipping is fine, and will just overwrite the previous unzipped files
@@ -311,9 +306,9 @@ class Conversion:
             # unzip and name .stil file to match .gz file
             for zip_file in list_zip_files:
                 stil_file = os.path.splitext(zip_file)[0]
-                with gzip.open(zip_file,'rb') as f_in:
-                    with open(stil_file,'wb') as f_out:
-                        shutil.copyfileobj(f_in,f_out)
+                with gzip.open(zip_file, 'rb') as f_in:
+                    with open(stil_file, 'wb') as f_out:
+                        shutil.copyfileobj(f_in, f_out)
             return 1
         except FileNotFoundError as e:
             # print(e)
@@ -333,12 +328,12 @@ class Conversion:
         :param pattern_category: str
             choices are INT, SAF and TDF
         """
-        if pattern_category.lower() in ('int','saf','tdf'):
+        if pattern_category.lower() in ('int', 'saf', 'tdf'):
             shutil.copy(self.velocity_dft_cfg_path, dest_dir)
         elif pattern_category.lower() == 'mbist':
-            shutil.copy(self.velocity_dft_cfg_path, dest_dir) #TODO: change to mbist CFG
+            shutil.copy(self.velocity_dft_cfg_path, dest_dir)  # TODO: change to mbist CFG
 
-    def generate_cfg_path(self, path_stil_files,pattern):
+    def generate_cfg_path(self, path_stil_files, pattern):
         """
         generate path to cfg file in each individual pattern folder
 
@@ -350,9 +345,9 @@ class Conversion:
             generated directory to cfg file
         """
 
-        if pattern.lower() in ('int','saf','tdf'):
+        if pattern.lower() in ('int', 'saf', 'tdf'):
             # cfg = os.path.join(path_stil_files, "lahaina_WCY_dft_universal.cfg")
-            cfg = os.path.join(path_stil_files, "waipio_WY_dft_universal_v1.cfg") #TODO Roshni: replace hardcoding of cfg file name
+            cfg = os.path.join(path_stil_files, self.chip_version + "_WY_dft_universal_v1.cfg")
         elif pattern.lower() == 'mbist':
             cfg = os.path.join(path_stil_files, "MBIST.cfg")
         return cfg
@@ -360,7 +355,7 @@ class Conversion:
     def sorted_alphanumeric(self, data):
         """sort alphanumerically. Developed to order TDF payload slice numbers correctly, as regular sort didn't work"""
         convert = lambda text: int(text) if text.isdigit() else text.lower()
-        alphanum_key = lambda key: [ convert(c) for c in re.split('([0-9]+)', key) ]
+        alphanum_key = lambda key: [convert(c) for c in re.split('([0-9]+)', key)]
         return sorted(data, key=alphanum_key)
 
     def modify_cfg(self, path_stil_files, pattern_category):
@@ -372,14 +367,15 @@ class Conversion:
         :param pattern_category: str
             choices are INT, SAF and TDF
         """
-        cfg = self.generate_cfg_path(path_stil_files,pattern_category)
+        cfg = self.generate_cfg_path(path_stil_files, pattern_category)
 
         if os.path.exists(cfg):
             # grab paths of all STIL files and save to a list
             stil_file_path = os.path.join(path_stil_files, '*.stil')
             list_stil_path = glob.glob(stil_file_path)
             if not list_stil_path:
-                self.logger.error(f'Error! This directory {path_stil_files} has no STIL files, and hence CFG file is not modified')
+                self.logger.error(
+                    f'Error! This directory {path_stil_files} has no STIL files, and hence CFG file is not modified')
             else:
                 # sort list_stil_path alphanumerically
                 list_stil_path_sorted = self.sorted_alphanumeric(list_stil_path)
@@ -390,32 +386,31 @@ class Conversion:
                     # print(stil_basename)
                     # identify header and payload
                     if pattern_category.lower() == 'tdf':
-                        if fnmatch.fnmatch(stil_basename,'*_slc_*'):
+                        if fnmatch.fnmatch(stil_basename, '*_slc_*'):
                             list_pl_name.append("\n  " + os.path.splitext(stil_basename)[0])
                         else:
                             hdr_name = os.path.splitext(stil_basename)[0]
 
-                    elif pattern_category.lower() in ['int','saf']:
-                        if fnmatch.fnmatch(stil_basename,'*_ts.stil'):
+                    elif pattern_category.lower() in ['int', 'saf']:
+                        if fnmatch.fnmatch(stil_basename, '*_ts.stil'):
                             hdr_name = os.path.splitext(stil_basename)[0]
 
 
                         else:
                             pl_name = os.path.splitext(stil_basename)[0]
 
-
                 if pattern_category.lower() == 'tdf':
-                    #grab pattern name from map file
+                    # grab pattern name from map file
                     df_map = pd.read_csv(self.map_path)
-                    #for TDF, header alone is sufficient to identify pattern name in map file
+                    # for TDF, header alone is sufficient to identify pattern name in map file
                     pattern_name = df_map.loc[df_map['header'] == hdr_name, 'Pattern'].values[0]
                     # add BURST section to the end of CFG file; NOTE: header needs to be listed above payloads!
                     list_lines = ["\nBURST  " + pattern_name, "\n  " + hdr_name] + list_pl_name + ["\nEND BURST"]
-                elif pattern_category.lower() in ['int','saf']:
+                elif pattern_category.lower() in ['int', 'saf']:
                     df_map = pd.read_csv(self.map_path)
 
-                    #for INT/SAF, both header and payload are needed to identify pattern name in map file
-                    #stripped_pl = pl_name[8:]
+                    # for INT/SAF, both header and payload are needed to identify pattern name in map file
+                    # stripped_pl = pl_name[8:]
                     if pattern_category.lower() in ['int']:
                         filter = (hdr_name == df_map['header']) & (pl_name == df_map['payload'])
 
@@ -424,9 +419,10 @@ class Conversion:
 
                     pattern_name = df_map.loc[filter, 'Vector'].values[0]
                     # add BURST section to the end of CFG file; NOTE: header needs to be listed above payloads!
-                    list_lines = ["\nBURST  " + "MBURST_" + pattern_name + "_XMD", "\n  " + hdr_name, "\n  " + pl_name, "\nEND BURST"]
+                    list_lines = ["\nBURST  " + "MBURST_" + pattern_name + "_XMD", "\n  " + hdr_name, "\n  " + pl_name,
+                                  "\nEND BURST"]
 
-                with open(cfg,'a') as f:
+                with open(cfg, 'a') as f:
                     f.writelines(list_lines)
         else:
             self.logger.error('Error! No correct CFG file is found! Please check the directory.')
@@ -451,7 +447,8 @@ class Conversion:
             list_stil_files = glob.glob(stil_file_path)
 
             if not list_stil_files:
-                self.logger.error(f'This directory {path_stil_files} has no STIL files, and hence conversion is not performed')
+                self.logger.error(
+                    f'This directory {path_stil_files} has no STIL files, and hence conversion is not performed')
                 return 0
             else:
                 self.logger.info(f'{len(list_stil_files)} STIL files exist in the directory: {path_stil_files}')
@@ -461,8 +458,8 @@ class Conversion:
                 list_stil_basename_sorted = list(map(lambda x: os.path.basename(x), list_stil_files_sorted))
 
                 # velocity path
-                velocity_root = r'C:\AllianceATE\bin' # velocity V8.1.0.0
-                velocity_path = os.path.join(velocity_root,'velocity.exe -STILtoTEV')
+                velocity_root = r'C:\AllianceATE\bin'  # velocity V8.1.0.0
+                velocity_path = os.path.join(velocity_root, 'velocity.exe -STILtoTEV')
                 # attributes for velocity setting
                 # veloctiy_setting = '+o2 +n +x1 +e2 +S +c'
                 # veloctiy_setting = '+o2 +n +x1 +e2 +S' #+S enables scan mode
@@ -481,7 +478,7 @@ class Conversion:
                 # print('Conversion command:\n{}'.format(cmd_conv))
 
                 # create a batch file to hold conversion command
-                conv_bat = os.path.join(path_stil_files,'conversion.bat')
+                conv_bat = os.path.join(path_stil_files, 'conversion.bat')
                 with open(conv_bat, 'w') as f:
                     # f.write(cmd_cd)
                     f.write(cmd_conv)
@@ -518,10 +515,11 @@ class Conversion:
                 #     print('\n****** Conversion Completed ******\n')
                 #     return 1
         else:
-            self.logger.error('Error! No correct CFG file is found, so conversion cannot be done! Please check the directory.')
+            self.logger.error(
+                'Error! No correct CFG file is found, so conversion cannot be done! Please check the directory.')
             return 0
 
-    def screen_mode(self,path_stil_files):
+    def screen_mode(self, path_stil_files):
         """
         screen voltage mode to determine if scan freq needs change due to the restriction that EV100 freq limit is 100MHz
 
@@ -578,7 +576,6 @@ class Conversion:
             self.logger.exception('Error! Initial period info cannot be obtained.')
             return 'na'
 
-
     def change_timing(self, path_stil_files, period_new):
         """change scan clock period in .h file
 
@@ -598,7 +595,8 @@ class Conversion:
             # rewrite TEV_TimeSets.h file
             with open(h_file, 'w') as f:
                 f.writelines(list_lines)
-            self.logger.info('{} is updated with a new scan clock period {}ns.'.format(os.path.basename(h_file), period_new))
+            self.logger.info(
+                '{} is updated with a new scan clock period {}ns.'.format(os.path.basename(h_file), period_new))
             return period_initial
         except Exception:
             self.logger.exception('Error! Period failed to be changed.')
@@ -626,7 +624,7 @@ class Conversion:
             # only compile the burst .dp file
             if kw in dp_file:
                 # create .do pattern and compilation log file names
-                do_file = dp_file.replace('.dp','.do')
+                do_file = dp_file.replace('.dp', '.do')
                 compile_log_file = dp_file.replace('.dp', '.log')
 
                 compile_cmd = path_ddc192 + ' -v -I ' + path_tsets + ' -L ' + compile_log_file + ' -o ' + do_file + ' ' + dp_file
@@ -650,7 +648,6 @@ class Conversion:
                 break
         # return dict_compile
         return err, do_file_base
-
 
     # def extract_cycle_count_mod(path_stil_files):
     #     """extract cycle count info from .dp files"""
@@ -683,7 +680,6 @@ class Conversion:
     #                 cycle_count = 0
     #             break
     #     return cycle_count
-
 
     def extract_cycle_count(self, path_stil_files):
         """
@@ -734,9 +730,10 @@ class Conversion:
         :param pattern_category: str
             choices are INT, SAF and TDF
         """
-        path_timesets = os.path.join(path_stil_files,'device','test','test_TimeSets.h')
+        path_timesets = os.path.join(path_stil_files, 'device', 'test', 'test_TimeSets.h')
         if os.path.exists(path_timesets):
-            if pattern_category.lower() in ['int','saf']: #optimize edgeset timing for 1.25ns resolution for 50MHz scan freq
+            if pattern_category.lower() in ['int',
+                                            'saf']:  # optimize edgeset timing for 1.25ns resolution for 50MHz scan freq
                 # grab edgeset patch from a template
                 with open(self.patch_timesets_50mhz_path, 'r') as f:
                     patch_50mhz = f.readlines()
@@ -766,7 +763,8 @@ class Conversion:
             with open(path_timesets, 'a') as f:
                 f.writelines(pingroup)
         else:
-            self.logger.error(f'Error! test_TimeSets.h cannot be found! Please check in the directory: {path_stil_files}')
+            self.logger.error(
+                f'Error! test_TimeSets.h cannot be found! Please check in the directory: {path_stil_files}')
 
     def remove_extra_pingroup(self, path_stil_files):
         """
@@ -788,9 +786,11 @@ class Conversion:
                 # write new lines
                 f.writelines(new_lines)
         else:
-            self.logger.error(f'Error! test_TimeSets.h cannot be found! Please check in the directory: {path_stil_files}')
+            self.logger.error(
+                f'Error! test_TimeSets.h cannot be found! Please check in the directory: {path_stil_files}')
 
-    def log_conversion_info(self, path_stil_files, pattern_category, vector_type, compile_error, do_file_base, change_period, initial_period, new_period, cyc_cnt, log_name):
+    def log_conversion_info(self, path_stil_files, pattern_category, vector_type, compile_error, do_file_base,
+                            change_period, initial_period, new_period, cyc_cnt, log_name):
         """
         log conversion information into a csv file
 
@@ -818,7 +818,7 @@ class Conversion:
         """
 
         # create dir if not exist
-        self.create_folder(self.conversion_log_csv_path)
+        self.make_folder.create_folder(self.conversion_log_csv_path)
 
         # set up header
         header = ['time', 'category', 'vector_type', 'block', 'domain', 'mode', 'compilation_successful',
@@ -844,7 +844,6 @@ class Conversion:
                     writer = csv.writer(file)
                     writer.writerow(header)
 
-
         # get timestamp
         # ts = time.gmtime()
         # date_time = time.strftime('%x %X', ts) # this gave me wrong hour
@@ -852,7 +851,6 @@ class Conversion:
         date_time = time.ctime(ts)
 
         # list_attr = ['mode', 'domain', 'block', 'vector_type', 'pattern_category']
-
 
         # get mode
         mode = os.path.basename(path_stil_files)
@@ -862,7 +860,7 @@ class Conversion:
             # get domain, block
             for i in range(len(list_attr)):
                 list_attr_val.append(os.path.basename(Path(path_stil_files).parents[i]))
-        elif pattern_category.lower() in ['int','saf']:
+        elif pattern_category.lower() in ['int', 'saf']:
             # get domain
             list_attr_val.append(os.path.basename(Path(path_stil_files).parents[0]))
             # fill 'block' column with abs path
@@ -885,7 +883,8 @@ class Conversion:
 
         # row = [date_time,category,vector_type,block,domain,mode,compile_ok,pattern,initial_period,period_changed,new_period,cyc_cnt]
         # row = [date_time] + list_attr_val + [mode,compile_ok,pattern,initial_period,period_changed,new_period,cyc_cnt]
-        row = [date_time] + list_attr_val_new + [compile_ok,pattern,initial_period,period_changed,new_period,cyc_cnt]
+        row = [date_time] + list_attr_val_new + [compile_ok, pattern, initial_period, period_changed, new_period,
+                                                 cyc_cnt]
 
         try:
             with open(csv_to_edit, 'a', newline='') as file:
@@ -893,14 +892,12 @@ class Conversion:
                 writer.writerow(row)
             self.logger.info(f'Pattern info recorded to {csv_to_edit}')
         except PermissionError as e:
-            csv_temp = csv_to_edit.replace('.csv','_temp.csv')
+            csv_temp = csv_to_edit.replace('.csv', '_temp.csv')
             self.logger.error(e)
             with open(csv_temp, 'w', newline='') as file:
                 writer = csv.writer(file)
                 writer.writerow(row)
             self.logger.info(f'Pattern info recorded to {csv_temp}')
-
-
 
         # list_row = []
         # for do_file in dict_compile.keys():
@@ -988,66 +985,66 @@ class Conversion:
             print(type(runsequence_template))
             joined_list = list_lines + runsequence_template
 
-        with open(dp_file,'w') as f:
+        with open(dp_file, 'w') as f:
             # f.writelines(all_lines)
             f.writelines(joined_list)
 
-#def main():
-    # global rev
-    # global chip_version
-    # global updated_data_time
-    # global py_log_name
-    # global map_path
-    # global map_path
-    # global velocity_dft_cfg_path
-    # global patch_timesets_path
-    # global patch_timesets_50mhz_path
-    # global py_log_path
-    # global conversion_log_csv_path
-   # global net_loc
+# def main():
+# global rev
+# global chip_version
+# global updated_data_time
+# global py_log_name
+# global map_path
+# global map_path
+# global velocity_dft_cfg_path
+# global patch_timesets_path
+# global patch_timesets_50mhz_path
+# global py_log_path
+# global conversion_log_csv_path
+# global net_loc
 
-   #  rev = 'r1'
-   #  chip_version = 'waipio'
-   #  # global variable
-   #  updated_data_time = time.strftime("%Y%m%d-%H%M%S")
-   #  py_log_name = 'py_conversion_' + updated_data_time + '_test.log'
-   #
-   #  ## mapping files ##
-   #  # tdf_map_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\c_weicya\ev100\seed_files\map_files\lahaina\Lahaina_V2p1_TDF_mapping_sheet.csv"
-   #  map_path = r"C:\Users\jianingz\Desktop\atpg_block_waipio.csv"
-   #
-   #  ## seed files ##
-   #  velocity_dft_cfg_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\c_weicya\ev100\seed_files\velocity_cfg\waipio\waipio_WY_dft_universal_v1.cfg"
-   #  patch_timesets_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\c_weicya\ev100\seed_files\patch_files\waipio\patch_timesets.txt"
-   #  patch_timesets_50mhz_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\c_weicya\ev100\seed_files\patch_files\lahaina\patch_timesets_50MHz.txt"  # TODO Roshni: need to update after waipio timesets methdology is avaialbe from TEV
-   #
-   #  ## paths to log files ##
-   #
-   #  py_log_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\atpg_cdp" + "\\" + chip_version + "\\" + rev + r"\py_log"
-   #  conversion_log_csv_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\atpg_cdp" + "\\" + chip_version + "\\" + rev + r"\conversion_log"
-   #
-   #  ## path to network drive ##
-   # # net_loc = r'\\qctdfsrt\prj\vlsi\vetch_pst\atpg_cdp\waipio\r1'
-   #
-   #  convert = Conversion()
-   #
-   #  convert.set_up_self.logger()
-   #  ##*** 5/26/21,  Examples demoed to Kunag. Demoed on SVE-EV100-1 PC***##
-   #  ### 1. Copy all STIL zip files from network drive to local PC ###
-   #  pattern_category = 'SAF'
-   #  vector_type = 'PROD'
-   #  local_loc = r"G:\ATPG_CDP\freq_mode_5_updated\waipio\r1_sec5lpe\ATPG"
-   #  # Uncomment the below func call (copy_all_zip()) to enable STIL zip files copying
-   #  # copy_all_zip(pattern_category,vector_type,local_loc)
-   #
-   #  ### 2. Convert patterns from STIL to DO format ###
-   #  dir_to_conv = os.path.join(local_loc, pattern_category, vector_type)
-   #  log_name = '061521_conv_test_log'
-   #  # Uncomment the below func call (traverse_levels()) to enable pattern conversion
-   #  convert.traverse_levels(dir_to_conv,pattern_category,vector_type,log_name,enable_del_zip=False)
-   #
-   #  ### 3. View doc string ###
-   #  print(convert.traverse_levels.__doc__) # get the docstring of function traverse_levels()
+#  rev = 'r1'
+#  chip_version = 'waipio'
+#  # global variable
+#  updated_data_time = time.strftime("%Y%m%d-%H%M%S")
+#  py_log_name = 'py_conversion_' + updated_data_time + '_test.log'
+#
+#  ## mapping files ##
+#  # tdf_map_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\c_weicya\ev100\seed_files\map_files\lahaina\Lahaina_V2p1_TDF_mapping_sheet.csv"
+#  map_path = r"C:\Users\jianingz\Desktop\atpg_block_waipio.csv"
+#
+#  ## seed files ##
+#  velocity_dft_cfg_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\c_weicya\ev100\seed_files\velocity_cfg\waipio\waipio_WY_dft_universal_v1.cfg"
+#  patch_timesets_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\c_weicya\ev100\seed_files\patch_files\waipio\patch_timesets.txt"
+#  patch_timesets_50mhz_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\c_weicya\ev100\seed_files\patch_files\lahaina\patch_timesets_50MHz.txt"  # TODO Roshni: need to update after waipio timesets methdology is avaialbe from TEV
+#
+#  ## paths to log files ##
+#
+#  py_log_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\atpg_cdp" + "\\" + chip_version + "\\" + rev + r"\py_log"
+#  conversion_log_csv_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\atpg_cdp" + "\\" + chip_version + "\\" + rev + r"\conversion_log"
+#
+#  ## path to network drive ##
+# # net_loc = r'\\qctdfsrt\prj\vlsi\vetch_pst\atpg_cdp\waipio\r1'
+#
+#  convert = Conversion()
+#
+#  convert.set_up_self.logger()
+#  ##*** 5/26/21,  Examples demoed to Kunag. Demoed on SVE-EV100-1 PC***##
+#  ### 1. Copy all STIL zip files from network drive to local PC ###
+#  pattern_category = 'SAF'
+#  vector_type = 'PROD'
+#  local_loc = r"G:\ATPG_CDP\freq_mode_5_updated\waipio\r1_sec5lpe\ATPG"
+#  # Uncomment the below func call (copy_all_zip()) to enable STIL zip files copying
+#  # copy_all_zip(pattern_category,vector_type,local_loc)
+#
+#  ### 2. Convert patterns from STIL to DO format ###
+#  dir_to_conv = os.path.join(local_loc, pattern_category, vector_type)
+#  log_name = '061521_conv_test_log'
+#  # Uncomment the below func call (traverse_levels()) to enable pattern conversion
+#  convert.traverse_levels(dir_to_conv,pattern_category,vector_type,log_name,enable_del_zip=False)
+#
+#  ### 3. View doc string ###
+#  print(convert.traverse_levels.__doc__) # get the docstring of function traverse_levels()
 
 # if __name__ == "__main__":
 #     main()

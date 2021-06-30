@@ -28,7 +28,7 @@ import time
 
 
 
-def digshell_exec(sn_to_append, log_dir, pat_type, voltage_mode):
+def digshell_exec(sn_to_append, log_dir, pat_type, voltage_mode, chip_version, dest):
     """
     execute digshell to run DFT patterns
     :param sn_to_append: str
@@ -44,9 +44,9 @@ def digshell_exec(sn_to_append, log_dir, pat_type, voltage_mode):
 
     # TODO Roshni: change pats.txt paths for Waipio once available; add functionality to select between projects so project-specific pats.txt paths can be used
     if pat_type == 'tdf':
-        pats_base_dir = r'F:\ATPG_CDP\Lahaina\r2\pattern_execution\Pattern_list\Seed_file_DO_NOT_modify\tdf'
+        pats_base_dir = dest + r'\Lahaina\r2\pattern_execution\Pattern_list\Seed_file_DO_NOT_modify\tdf'
     elif pat_type == 'atpg':
-        pats_base_dir = r'G:\ATPG_CDP\pattern_execution\pattern_list'
+        pats_base_dir = dest + r'\pattern_execution\pattern_list'
 
     temp_path = r'\\qctdfsrt\prj\vlsi\vetch_pst\jianingz\handler_integration\temp_file_DO_NOT_MODIFY'
     exit_file = 'digshell_exec_success.txt'
@@ -62,9 +62,9 @@ def digshell_exec(sn_to_append, log_dir, pat_type, voltage_mode):
     else:
         print('\n****** No {} found.******'.format(exit_file))
 
-    # TODO Roshni: add functionality to select between projects so project-specific JSON file can be loaded
-    jsonfile = r"C:\vi\pats_abs\go_Waipio_abs.json"
-    tempfile = r"C:\AXITestPrograms\DigShell\waipio_temp.json"
+
+    jsonfile = r"C:\vi\pats_abs\go_" + chip_version.capitalize() + "_abs.json"
+    tempfile = r"C:\AXITestPrograms\DigShell" + "\\" + chip_version + r"_temp.json"
     with open(jsonfile) as f:
         data = json.load(f)
     # print(json.dumps(data, sort_keys=True, indent=4))
@@ -102,7 +102,7 @@ def digshell_exec(sn_to_append, log_dir, pat_type, voltage_mode):
     ############################################
 
     today = date.today()
-    base_dir = r'G:\ATPG_CDP\pattern_execution\execution_dlog'
+    base_dir = dest + r'\pattern_execution\execution_dlog'
     today_dir = os.path.join(base_dir,'dft_run_'+str(today))
     if not os.path.exists(today_dir):
         os.mkdir(today_dir)
@@ -225,6 +225,9 @@ def dlog_csv_post_process(dlog_dir, output_dir, output_csv_name, pats_txt, volta
 
 
 def main():
+    chip_version = 'waipio'
+    dest = r'G:\ATPG_CDP'
+
     parser = argparse.ArgumentParser(description='Execute DFT patterns with EV100 Digshell program')
     parser.add_argument('-sn', dest='sn', type=str, help='sn of the part from its fuse dump')
     parser.add_argument('-log_dir', dest='log_dir', type=str,
@@ -236,7 +239,7 @@ def main():
     args = parser.parse_args()
 
     # call digshell_exec()
-    digshell_exec(args.sn, args.log_dir, args.pat_type, args.voltage_mode)
+    digshell_exec(args.sn, args.log_dir, args.pat_type, args.voltage_mode, chip_version, dest)
 
 if __name__ == '__main__':
     main()

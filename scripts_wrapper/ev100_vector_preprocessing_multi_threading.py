@@ -7,7 +7,7 @@ from datetime import timedelta
 import fnmatch
 import re
 import multiprocessing
-
+from enum import Enum
 from gevent import monkey
 import subprocess
 
@@ -31,6 +31,8 @@ class Preprocess():
         self.dest = dest
         self.map_path = map_path
         self.par_vector_path_r1 = par_vector_path_r1
+        self.folder_ordering = ['Bin Si Revision', 'Block', 'DFT type', 'Vector Type', 'Vector', 'freq mode']
+        self.make_folder = CreateFolder()
 
     # def set_up_logger(self):
     #     global logger, updated_data_time
@@ -67,19 +69,7 @@ class Preprocess():
         df_map = df_map[df_map['Vector Type'].str.match(vector_type)]
         return df_map
 
-    def create_folder(self, dir):
-        """
-        Create the directory if not exists.
 
-        :param dir: str
-            directory to create
-        """
-        if not os.path.exists(dir):
-            try:
-                os.makedirs(dir)
-                self.logger.debug(f'Directory created: {dir}')
-            except Exception:
-                self.logger.exception(f"Error! Could not create directory {dir}")
 
     def copy_files(self, log_level, df_file_loc, dir_path):
         """
@@ -114,7 +104,7 @@ class Preprocess():
         :return: bool
             0 if failed; 1 if successful
         """
-
+        #cmd = "pycopier " + "\"" + path_to_file + "\"" + " " + "\"" + dest_dir + "\""
         cmd = "python -m pycopier " + "\"" + path_to_file + "\"" + " " + "\"" + dest_dir + "\""
         subprocess.call(cmd, shell = True)
         if log_level == 'info':
@@ -155,50 +145,11 @@ class Preprocess():
 
         # TODO: optimize this looping
         # looping by dataframe rows
+
         for index, row in df_map.iterrows():
-            # create payload filename
-            # TODO: can simplify once requirement mapping list implemented
-            path_atpg_r1 = os.path.join(self.par_vector_path_r1, row['Block'], 'SRC')
-            pl = re.search("(tk_atpg)(.*)", row['payload']).group(2)
-            hdr = row['header']
+            df_file_loc, res_hdr_cpy, res_pl_cpy, start_inner = self.determine_src_dest(dest_dir, df_file_loc,pattern_category, res_hdr_cpy,res_pl_cpy, row, vector_type)
+        #  self.folder_ordering = ['Bin Si Revision', 'Block', 'DFT type', 'Vector Type', 'Vector', 'freq mode']
 
-            # copy header and payload zip file
-            hdr_zip = hdr + '.stil.gz'
-            hdr_path_to_copy = os.path.join(path_atpg_r1,hdr_zip)
-
-            # split using payload delimiter |
-            payload_list = re.split("\\|", pl)
-            if row['DFT type'] == "TDF":
-                payload_list = [""]
-            for payload in payload_list:
-                if row['DFT type'] != "TDF":
-                    pl_zip = 'tk_atpg' + payload + '.stil.gz'
-                    pl_path_to_copy = os.path.join(path_atpg_r1,pl_zip)
-                else:
-                    pl_path_to_copy = path_atpg_r1
-
-                # folder_ordering = ['Block', 'Bin Si Revision', 'DFT type', 'Vector Type', 'Vector', 'freq mode']
-                comp_type, dir_path, name = self.create_file_path(dest_dir, payload, row)
-                self.create_folder(dir_path)
-
-                start_inner = time.time()
-
-                self.logger.info(f"*** Currently storing .stil.gz files for {pattern_category} {vector_type} {comp_type} {name} {row['freq mode']} ***")
-                self.logger.info(
-                        f"*** Currently storing .stil.gz files for {pattern_category} {vector_type} {comp_type} {name} {row['freq mode']} ***")
-
-                # copy header and increment counter
-
-                # res_hdr_cpy = copy_files(hdr_path_to_copy, dir_path, 'info')
-                new_row = {'source': hdr_path_to_copy, 'dest': dir_path}
-                df_file_loc = df_file_loc.append(new_row, ignore_index=True)
-                res_hdr_cpy += 1
-                if row['DFT type'] == 'TDF':
-                    res_pl_cpy += 1
-                    df_file_loc = self.copy_payloads_tdf(dir_path, pl_path_to_copy, row, df_file_loc)
-                else:
-                    res_pl_cpy += 1
-                    df_file_loc = self.copy_payload(dir_path, pl_path_to_copy, df_file_loc)
 
         self.setup_thread_pool(dest_dir, df_file_loc)
 
@@ -223,6 +174,48 @@ class Preprocess():
         elapsed = end - start
         self.logger.info(f'***** Total time elapsed for file storing and classification: {timedelta(seconds=elapsed)} *****')
 
+    def determine_src_dest(self, dest_dir, df_file_loc, pattern_category, res_hdr_cpy, res_pl_cpy, row, vector_type):
+        path_atpg_r1 = os.path.join(self.par_vector_path_r1, row['Block'], 'SRC')
+        pl = re.search("(tk_atpg)(.*)", row['payload']).group(2)
+        hdr = row['header']
+        # copy header and payload zip file
+        hdr_zip = hdr + '.stil.gz'
+        hdr_path_to_copy = os.path.join(path_atpg_r1, hdr_zip)
+        # split using payload delimiter |
+        payload_list = re.split("\\|", pl)
+        if row['DFT type'] == "TDF":
+            payload_list = [""]
+        for payload in payload_list:
+            if row['DFT type'] != "TDF":
+                pl_zip = 'tk_atpg' + payload + '.stil.gz'
+                pl_path_to_copy = os.path.join(path_atpg_r1, pl_zip)
+            else:
+                pl_path_to_copy = path_atpg_r1
+
+            # folder_ordering = ['Block', 'Bin Si Revision', 'DFT type', 'Vector Type', 'Vector', 'freq mode']
+            comp_type, dir_path, name = self.create_file_path(dest_dir, payload, row)
+            self.make_folder.create_folder(dir_path)
+
+            start_inner = time.time()
+
+            self.logger.info(
+                f"*** Currently storing .stil.gz files for {pattern_category} {vector_type} {comp_type} {name} {row['freq mode']} ***")
+            self.logger.info(
+                f"*** Currently storing .stil.gz files for {pattern_category} {vector_type} {comp_type} {name} {row['freq mode']} ***")
+
+            # copy header and increment counter
+
+            # res_hdr_cpy = copy_files(hdr_path_to_copy, dir_path, 'info')
+            new_row = {'source': hdr_path_to_copy, 'dest': dir_path}
+            df_file_loc = df_file_loc.append(new_row, ignore_index=True)
+            res_hdr_cpy += 1
+            if row['DFT type'] == 'TDF':
+                res_pl_cpy += 1
+                df_file_loc = self.copy_payloads_tdf(dir_path, pl_path_to_copy, row, df_file_loc)
+            else:
+                res_pl_cpy += 1
+                df_file_loc = self.copy_payload(dir_path, pl_path_to_copy, df_file_loc)
+        return df_file_loc, res_hdr_cpy, res_pl_cpy, start_inner
 
     def setup_thread_pool(self, dest_dir, df_file_loc):
         csv_name = self.copy_files('info', df_file_loc, dest_dir)
@@ -282,8 +275,7 @@ class Preprocess():
 
     def create_file_path(self,dest_dir, payload, row):
         dir_path = os.path.join(dest_dir, self.chip_version)
-        folder_ordering = ['Bin Si Revision', 'Block', 'DFT type', 'Vector Type', 'Vector', 'freq mode']
-        for folder_name in folder_ordering:
+        for folder_name in self.folder_ordering:
             if folder_name == 'Vector':
                 comp_type = re.search("(lpc|lpu)", row[folder_name])[0]
                 if (row['DFT type'] == 'SAF'):
@@ -324,20 +316,7 @@ class Generate_Pats():
 
         self.conversion_log_csv_path = conversion_log_csv_path
         self.logger = logger
-
-    def create_folder(self, dir):
-        """
-        Create the directory if not exists.
-
-        :param dir: str
-            directory to create
-        """
-        if not os.path.exists(dir):
-            try:
-                os.makedirs(dir)
-                self.logger.debug(f'Directory created: {dir}')
-            except Exception:
-                self.logger.exception(f"Error! Could not create directory {dir}")
+        self.make_folder = CreateFolder
 
     def generate_pats_txt(self, pattern_category, vector_type, dir_pat, dir_exec, log_name, lim, list_dirs_exclude = [], pin_group ='OUT', enable_cyc_cnt=1, blocks=[], freq_modes = ['NOM', 'SVS', 'TUR', 'SVSD1']):
         """
@@ -398,7 +377,7 @@ class Generate_Pats():
                 dir_sub = os.path.join(dir_exec, mode, pattern_category, vector_type)
                 pre_fix = 'PATS_' + pattern_category + '_' + vector_type + '_'
 
-            self.create_folder(dir_sub)
+            self.make_folder.createfolder(dir_sub)
 
             do_files = []
             for root, dirs, files in os.walk(path_top_level,topdown=True):
@@ -451,7 +430,7 @@ class Generate_Pats():
             for i in range(cnt):
 
                 pats_dir = os.path.join(dir_sub, str(i+1))
-                self.create_folder(pats_dir)
+                self.make_folder.create_folder(pats_dir)
                 pats_txt_name = pre_fix + str(i+1) + '.txt'
                 pats_txt = os.path.join(pats_dir, pats_txt_name)
                 # write header
@@ -488,7 +467,20 @@ class Generate_Pats():
 
             print(f'*** PATS.txt generation completed for {pattern_category} {vector_type}{mode}')
 
+class CreateFolder():
+    def create_folder(self, dir):
+        """
+        Create the directory if not exists.
 
+        :param dir: str
+            directory to create
+        """
+        if not os.path.exists(dir):
+            try:
+                os.makedirs(dir)
+                self.logger.debug(f'Directory created: {dir}')
+            except Exception:
+                self.logger.exception(f"Error! Could not create directory {dir}")
 # def main():
 #     # global rev
 #     # global chip_version
