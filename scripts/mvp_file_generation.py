@@ -103,14 +103,15 @@ class GenerateMVP:
 
     def add_pin_groups(self, df_pins, mvp_df):
         """
+        Will add all pins, scan in, scan out, clk, jtag, control categories and corresponding gpios
+        to mvp_df
+
         :param df_pins: DataFrame
             All Required Pins df includes info on pin organization within all pins,
             scan in, scan out, clk, jtag, control categories
         :param mvp_df: DataFrame
             DF that has initial channel layout values and will have pin category
             organizations information listed after per required MVP file format
-        Will add all pins, scan in, scan out, clk, jtag, control categories and corresponding gpios
-        to mvp_df
         :return mvp_df: DataFrame
             mvp_df should have entire information needed to be converted to .MVP file with proper
             space padding formatted and columns organized
@@ -135,6 +136,9 @@ class GenerateMVP:
 
     def add_channel_rows(self, df_channels, mvp_df, all_pins_df):
         """
+        Looks for specific regex expressions to parse channel mapping information for all pins found in
+        the df_channel dataframe. Add new rows to mvp_df with correct formatting for when converted to .MVP file
+
         :param df_channels DataFrame
             HD Connector excel file converted to df formatted to only include main channel mapping table
         :param mvp_df: DataFrame
@@ -143,8 +147,6 @@ class GenerateMVP:
         :param all_pins_df: DataFrame
             this dataframe is created to maximize efficiency to store information needed for ALL_PINS section
             of MVP file to be added after.
-        Looks for specific regex expressions to parse channel mapping information for all pins found in
-        the df_channel dataframe. Add new rows to mvp_df with correct formatting for when converted to .MVP file
         :return mvp_df: DataFrame
             files in all pin channel mapping etc. information under correct column header.
         :return all_pins_df: DataFrame
@@ -165,6 +167,9 @@ class GenerateMVP:
 
     def get_channel_name(self, mvp_df, row, regex, all_pins_df):
         """
+        Adds ['MVP       ', 'Pin Name', 'Chassis', 'Slot', 'Channel', 'Site', 'Pattern#','Instrument Type'] and
+        ALL_PINS and Pin Name to respective dataframe
+
         :param mvp_df: DataFrame
             main dataframe that is holding MVP file information that will be converted into the .MVP file
         :param row: DataFrame row
@@ -176,8 +181,7 @@ class GenerateMVP:
         :param all_pins_df: DataFrame
             Dataframe that simultaneously gathers information needed for ALL_PINS (list of all pin names) while
             code is building first part of mvp files
-        Adds ['MVP       ', 'Pin Name', 'Chassis', 'Slot', 'Channel', 'Site', 'Pattern#','Instrument Type'] and
-        ALL_PINS and Pin Name to respective dataframe
+
         :return mvp_df: DataFrame
             files in all pin channel mapping etc. information under correct column header.
         :return all_pins_df: DataFrame
@@ -208,10 +212,12 @@ class GenerateMVP:
 
     def mode_correction(self, pin_name):
         """
-        :param pin_name: str
-            correction to pin naming convention difference between excel info and MVP file naming requirement
         specifically fixes mode_0, mode_1 naming discrepancy
         Can remove method once file generated up to naming convention standard
+
+        :param pin_name: str
+            correction to pin naming convention difference between excel info and MVP file naming requirement
+
         :return pin_name: str
             updated pin_name according to naming convention
         """
@@ -222,10 +228,12 @@ class GenerateMVP:
 
     def jtag_correction(self, pin_name):
         """
-        :param pin_name: str
-            correction to pin naming convention difference between excel info and MVP file naming requirement
         specifically fixes jtag_ naming discrepancy
         Can remove method once file generated up to naming convention standard
+
+        :param pin_name: str
+            correction to pin naming convention difference between excel info and MVP file naming requirement
+
         :return pin_name: str
             updated pin_name according to naming convention
         """

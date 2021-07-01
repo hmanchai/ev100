@@ -1,16 +1,17 @@
-import os
-import glob
-import shutil
-import pandas as pd
-import re
+import calendar
 import csv
-import gzip
 import fnmatch
+import glob
+import gzip
+import os
+import re
+import shutil
 import time
 from datetime import timedelta
-import calendar
-import logging
 from pathlib import Path
+
+import pandas as pd
+
 from ev100_vector_preprocessing_multi_threading import CreateFolder
 
 
@@ -19,6 +20,9 @@ from ev100_vector_preprocessing_multi_threading import CreateFolder
 class Conversion:
     """
     Convert patterns from STIL to DO format
+    map_path and dest are main json file inputs that should be changed manually in json file between runs
+    creates folders device and test in each folder containing STIL
+    test folder includes .do and .dp files
     """
     def __init__(self, rev, chip_version, py_log_path, py_log_name, pattern_category, vector_type,
                  updated_date_time, logger, conversion_log_csv_path, dest, blocks, log_name, velocity_dft_cfg_path,
@@ -959,7 +963,7 @@ class Conversion:
                 else:
                     self.logger.info(f'{len(list_zip_files)} zip files are successfully deleted.')
 
-    def patch_dp_file(path_stil_files):
+    def patch_dp_file(self, path_stil_files):
         """temporarily used to patch the combined .dp file to incorporate runsequence pattern"""
         # find the combined .dp file
         dp_file_list = glob.glob(path_stil_files + '/**/*combined.dp', recursive=True)
