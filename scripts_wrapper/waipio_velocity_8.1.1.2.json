@@ -18,7 +18,7 @@
   "blocks": [
     "ATPG"
   ],
-  "log_name": "conversion_log_INT_SAF_PROD_20210625",
+  "log_name": "waipio_filtered_duplicates",
   "conversion_log_csv_path": "\\\\qctdfsrt\\prj\\vlsi\\vetch_pst\\atpg_cdp\\waipio\\r1\\conversion_log",
   "lim": 1,
   "pin_group": "ALL_PINS",

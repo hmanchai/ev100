@@ -74,14 +74,13 @@ class wrapper():
 
     def generate_pats_txt(self, conversion_log_csv_path, dir_pat, log_name, lim, list_dirs_exclude=[], pin_group='OUT',
                           enable_cyc_cnt=1, blocks=[], freq_modes=['NOM', 'SVS', 'TUR', 'SVSD1']):
-        dir_exec = os.path.join(dir_pat, self.chip_version, 'pattern_execution', 'pattern_list')
+        dir_exec = os.path.join(dir_pat, 'pattern_execution', 'pattern_list')
         version_num = self.rev + "_sec5lpe"
-        dir_pat = os.path.join(dir_pat, self.chip_version, version_num)
-        print(conversion_log_csv_path)
+        #dir_pat = os.path.join(dir_pat, self.chip_version, version_num)
         preprocess = ev100_vector_preprocessing_multi_threading.Generate_Pats(conversion_log_csv_path, self.logger)
         pattern_categories = self.pattern_category.split("|")
         for block in blocks:
-            dir_pat = os.path.join(dir_pat, block)
+            #dir_pat = os.path.join(dir_pat, block)
             for pat_cat in pattern_categories:
                 vector_types = self.vector_type.split("|")
                 for type in vector_types:
