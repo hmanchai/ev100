@@ -1,23 +1,27 @@
-import os
+import fnmatch
 import glob
-
-import pandas as pd
+import multiprocessing
+import os
+import re
+import subprocess
 import time
 from datetime import timedelta
-import fnmatch
-import re
-import multiprocessing
 
+import pandas as pd
 from gevent import monkey
-import subprocess
 
 monkey.patch_all()
 
 from gevent.pool import Pool
-#python -m pip install pycopier
+
 
 
 class Preprocess():
+    """
+    Preprocessing script retrieves STIL zip files and combines header and payload pairs into unique
+    file path based on inputted mapping file that aligns with requirements document
+    """
+
     def __init__(self, rev, chip_version, py_log_path, py_log_name, pattern_category, vector_type,
                  updated_date_time, logger, dest, map_path, par_vector_path_r1):
         self.rev = rev
@@ -31,6 +35,8 @@ class Preprocess():
         self.dest = dest
         self.map_path = map_path
         self.par_vector_path_r1 = par_vector_path_r1
+        self.folder_ordering = ['Bin Si Revision', 'Block', 'DFT type', 'Vector Type', 'Vector', 'freq mode']
+        self.make_folder = CreateFolder()
 
     # def set_up_logger(self):
     #     global logger, updated_data_time
@@ -49,50 +55,31 @@ class Preprocess():
     #     logger.addHandler(file_handler)
     #     logger.addHandler(stream_handler)
 
-
-    def load_filter_map(self,pattern_category, vector_type):
+    def load_filter_map(self):
         """
         Load and filter map file.
-
-        :param pattern_category: str
-            choice of pattern category has TDF, INT, or SAF
-        :param vector_type: str
             choice of vector type has PROD or RMA. As project evolves, more choices might come
         :return: pandas dataframe containing vector header and payload mapping
         """
 
         df_map = pd.read_csv(self.map_path)
         # filter out non-translated and non-available patterns
-        df_map = df_map[df_map['DFT type'].str.match(pattern_category)]
-        df_map = df_map[df_map['Vector Type'].str.match(vector_type)]
+        df_map = df_map[df_map['DFT type'].str.match(self.pattern_category)]
+        df_map = df_map[df_map['Vector Type'].str.match(self.vector_type)]
         return df_map
 
-    def create_folder(self, dir):
+    def copy_files(self, df_file_loc, dir_path):
         """
-        Create the directory if not exists.
+        Copy source and destination of files stored in dataframe to csv file so multithreading can be preformed in copying process
 
-        :param dir: str
-            directory to create
-        """
-        if not os.path.exists(dir):
-            try:
-                os.makedirs(dir)
-                self.logger.debug(f'Directory created: {dir}')
-            except Exception:
-                self.logger.exception(f"Error! Could not create directory {dir}")
-
-    def copy_files(self, log_level, df_file_loc, dir_path):
-        """
-        Copy files to target directory, and increment count if copy succeeds.
-
-        :param path_to_file: str
-            directory to source files to copy
-        :param dest_dir: str
+        :param df_file_loc: DataFrame
+            dataframe containing source and destination of each file (header and payload)
+        :param dir_path: str
             directory of destination to copy source files to
-        :param log_level: str
-            defines the level of logger
-        :return: bool
-            0 if failed; 1 if successful
+
+        :return: temp_csv: str
+            temp_csv contains source and destination of files to be copied
+
         """
         temp_csv = os.path.join(dir_path, 'temp.csv')
         csv_file = open(temp_csv, "w")
@@ -100,10 +87,11 @@ class Preprocess():
         csv_file.close()
         return temp_csv
 
-
     def copy_files_threading(self, path_to_file, dest_dir, log_level):
         """
-        Copy files to target directory, and increment count if copy succeeds.
+        Copy files to target directory, through pycopier
+        # python -m pip install pycopier
+        This method is called through multithreading from the worker
 
         :param path_to_file: str
             directory to source files to copy
@@ -111,21 +99,18 @@ class Preprocess():
             directory of destination to copy source files to
         :param log_level: str
             defines the level of logger
-        :return: bool
-            0 if failed; 1 if successful
         """
-
+        # cmd = "pycopier " + "\"" + path_to_file + "\"" + " " + "\"" + dest_dir + "\""
         cmd = "python -m pycopier " + "\"" + path_to_file + "\"" + " " + "\"" + dest_dir + "\""
-        subprocess.call(cmd, shell = True)
+        subprocess.call(cmd, shell=True)
         if log_level == 'info':
             self.logger.info(f'File copied: {os.path.basename(path_to_file)}')
         elif log_level == 'debug':
             self.logger.debug(f'File copied: {os.path.basename(path_to_file)}')
 
-
-
-    def store_all_zip_atpg(self, dest_dir, pattern_category, vector_type):
+    def store_all_zip_atpg(self, dest_dir):
         """
+        :param dest_dir: base destination directory for all copied files to go into respective filepath
         Copy INT or SAF STIL zip files from original dir, classify (by: block, domain, mode, etc.) and store in a target location,
         e.g. network drive
         NOTE: double copy is OK and will overwrite
@@ -138,7 +123,7 @@ class Preprocess():
         # dir_vector_type = os.path.join(dir_pattern,vector_type)
 
         # load and filter map file to pd df
-        df_map = self.load_filter_map(pattern_category, vector_type)
+        df_map = self.load_filter_map()
         # print(df_map)
         df_file_loc = pd.DataFrame(columns=['source', 'dest'])
         # set up pattern source path
@@ -151,61 +136,18 @@ class Preprocess():
         dict_rev_cnt = {'r1': 0}
 
         start = time.time()
-        self.logger.info(f"***** Starting .stil.gz files storing and classification for {pattern_category} {vector_type} *****")
-
+        self.logger.info(
+            f"***** Starting .stil.gz files storing and classification for {self.pattern_category} {self.vector_type} *****")
         # TODO: optimize this looping
         # looping by dataframe rows
         for index, row in df_map.iterrows():
-            # create payload filename
-            # TODO: can simplify once requirement mapping list implemented
-            path_atpg_r1 = os.path.join(self.par_vector_path_r1, row['Block'], 'SRC')
-            pl = re.search("(tk_atpg)(.*)", row['payload']).group(2)
-            hdr = row['header']
-
-            # copy header and payload zip file
-            hdr_zip = hdr + '.stil.gz'
-            hdr_path_to_copy = os.path.join(path_atpg_r1,hdr_zip)
-
-            # split using payload delimiter |
-            payload_list = re.split("\\|", pl)
-            if row['DFT type'] == "TDF":
-                payload_list = [""]
-            for payload in payload_list:
-                if row['DFT type'] != "TDF":
-                    pl_zip = 'tk_atpg' + payload + '.stil.gz'
-                    pl_path_to_copy = os.path.join(path_atpg_r1,pl_zip)
-                else:
-                    pl_path_to_copy = path_atpg_r1
-
-                # folder_ordering = ['Block', 'Bin Si Revision', 'DFT type', 'Vector Type', 'Vector', 'freq mode']
-                comp_type, dir_path, name = self.create_file_path(dest_dir, payload, row)
-                self.create_folder(dir_path)
-
-                start_inner = time.time()
-
-                self.logger.info(f"*** Currently storing .stil.gz files for {pattern_category} {vector_type} {comp_type} {name} {row['freq mode']} ***")
-                self.logger.info(
-                        f"*** Currently storing .stil.gz files for {pattern_category} {vector_type} {comp_type} {name} {row['freq mode']} ***")
-
-                # copy header and increment counter
-
-                # res_hdr_cpy = copy_files(hdr_path_to_copy, dir_path, 'info')
-                new_row = {'source': hdr_path_to_copy, 'dest': dir_path}
-                df_file_loc = df_file_loc.append(new_row, ignore_index=True)
-                res_hdr_cpy += 1
-                if row['DFT type'] == 'TDF':
-                    res_pl_cpy += 1
-                    df_file_loc = self.copy_payloads_tdf(dir_path, pl_path_to_copy, row, df_file_loc)
-                else:
-                    res_pl_cpy += 1
-                    df_file_loc = self.copy_payload(dir_path, pl_path_to_copy, df_file_loc)
+            df_file_loc, res_hdr_cpy, res_pl_cpy, start_inner = self.determine_src_dest(dest_dir, df_file_loc,
+                                                                                        res_hdr_cpy, res_pl_cpy, row)
+        #  self.folder_ordering = ['Bin Si Revision', 'Block', 'DFT type', 'Vector Type', 'Vector', 'freq mode']
 
         self.setup_thread_pool(dest_dir, df_file_loc)
 
         dict_rev_cnt[self.rev] += res_hdr_cpy
-
-        # copy payload and increment counter
-
 
         # increment total count
         total_hdr_cnt += res_hdr_cpy
@@ -215,17 +157,82 @@ class Preprocess():
         elapsed_inner = end_inner - start_inner
         self.logger.info(f'*** Time elapsed for file storing for this pattern: {timedelta(seconds=elapsed_inner)} ***')
 
-
         self.logger.info(f'***** Total count of .stil.gz files stored and classified for header: {total_hdr_cnt} *****')
         self.logger.info(f'***** Total count of .stil.gz files stored and classified for payload: {total_pl_cnt} *****')
 
         end = time.time()
         elapsed = end - start
-        self.logger.info(f'***** Total time elapsed for file storing and classification: {timedelta(seconds=elapsed)} *****')
+        self.logger.info(
+            f'***** Total time elapsed for file storing and classification: {timedelta(seconds=elapsed)} *****')
 
+    def determine_src_dest(self, dest_dir, df_file_loc, res_hdr_cpy, res_pl_cpy, row):
+        """
+        :param dest_dir: str
+            base destination directory that all filepaths for STIL will contain
+        :param df_file_loc: DataFrame
+            will store list of source and destination for each STIL file to be copied to and from
+        :param res_hdr_cpy: int
+            keep count of header files to be copied
+        :param res_pl_cpy: int
+            keep count of payload files to be copied
+        :param row: DataFrame row
+            row of DFT vector mapping list with all necessary info to create destination filepath
+        """
+        path_atpg_r1 = os.path.join(self.par_vector_path_r1, row['Block'], 'SRC')
+        pl = re.search("(tk_atpg)(.*)", row['payload']).group(2)
+        hdr = row['header']
+        # copy header and payload zip file
+        hdr_zip = hdr + '.stil.gz'
+        hdr_path_to_copy = os.path.join(path_atpg_r1, hdr_zip)
+        # split using payload delimiter |
+        payload_list = re.split("\\|", pl)
+        if row['DFT type'] == "TDF":
+            payload_list = [""]
+        for payload in payload_list:
+            if row['DFT type'] != "TDF":
+                pl_zip = 'tk_atpg' + payload + '.stil.gz'
+                pl_path_to_copy = os.path.join(path_atpg_r1, pl_zip)
+            else:
+                pl_path_to_copy = path_atpg_r1
+
+            # folder_ordering = ['Block', 'Bin Si Revision', 'DFT type', 'Vector Type', 'Vector', 'freq mode']
+            comp_type, dir_path, name = self.create_file_path(dest_dir, payload, row)
+            self.make_folder.create_folder(dir_path)
+
+            start_inner = time.time()
+
+            self.logger.info(
+                f"*** Currently storing .stil.gz files for {self.pattern_category} {self.vector_type} {comp_type} {name} {row['freq mode']} ***")
+            self.logger.info(
+                f"*** Currently storing .stil.gz files for {self.pattern_category} {self.vector_type} {comp_type} {name} {row['freq mode']} ***")
+
+            # copy header and increment counter
+
+            # res_hdr_cpy = copy_files(hdr_path_to_copy, dir_path, 'info')
+            new_row = {'source': hdr_path_to_copy, 'dest': dir_path}
+            df_file_loc = df_file_loc.append(new_row, ignore_index=True)
+            res_hdr_cpy += 1
+            if row['DFT type'] == 'TDF':
+                res_pl_cpy += 1
+                df_file_loc = self.copy_payloads_tdf(dir_path, pl_path_to_copy, row, df_file_loc)
+            else:
+                res_pl_cpy += 1
+                df_file_loc = self.copy_payload(dir_path, pl_path_to_copy, df_file_loc)
+        return df_file_loc, res_hdr_cpy, res_pl_cpy, start_inner
 
     def setup_thread_pool(self, dest_dir, df_file_loc):
-        csv_name = self.copy_files('info', df_file_loc, dest_dir)
+        """
+        creates csv containing source and destination for each file to be copied
+        creates pool size based on number of cpu count
+        based on these numbers csv file is divided into chunks that threads will work on
+        call worker to execute copying
+
+        :param dest_dir: str
+            Base destination directory that all filepaths begin
+        :param df_file_loc: DataFrame
+            Dataframe that contains all source and destination locations for each file to be copied
+        """
+        csv_name = self.copy_files(df_file_loc, dest_dir)
         no_of_procs = multiprocessing.cpu_count() * 4
         file_size = os.stat(csv_name).st_size
         file_size_per_chunk = file_size / no_of_procs
@@ -235,8 +242,15 @@ class Preprocess():
             pool.apply_async(self.worker, (csv_name, chunk))
         pool.join()
 
+    def getChunks(self, file, size):
+        """
+        divide file into chunks that threads can work on to maximize efficiency
 
-    def getChunks(self,file, size):
+        :param file: csv file
+            csv file containing source and destinations
+        :param size: int
+            size of file
+        """
         f = open(file, 'rb')
         while 1:
             start = f.tell()
@@ -248,6 +262,12 @@ class Preprocess():
                 break
 
     def worker(self, csv_file, chunk):
+        """
+        find chunk assigned and begins work by calling method to copy with proper inputs
+
+        :param csv_file: filepath
+        :param chunk: start, f.tell() - start
+        """
         f = open(csv_file)
         f.seek(chunk[0])
         for file in f.read(chunk[1]).splitlines():
@@ -257,17 +277,34 @@ class Preprocess():
                 self.copy_files_threading(src_dest[0], src_dest[1], 'info')
 
     def copy_payload(self, dir_path, pl_path_to_copy, df_file_loc):
+        """
+        add payload source and destination
+        :param dir_path: str
+            destination of payload file
+        :param: pl_path_to_copy: str
+            source of payload file
+        :param df_file_loc
+            Dataframe to store all sources and destinations
+        :return df_file_loc: DataFrame
+            Dataframe updated with new source and destination of payload to be copied
+        """
         df_file_loc = df_file_loc.append({'source': pl_path_to_copy, 'dest': dir_path}, ignore_index=True)
         return df_file_loc
-        # res_pl_cpy = copy_files(pl_path_to_copy, dir_path, 'info')
-        # dict_rev_cnt[rev] += res_pl_cpy
-        # if res_pl_cpy:
-        #     logger.info(f'{res_pl_cpy} payload .stil.gz files downloaded successfully.')
-        #     logger.info((f'Payload copied from Waipio r1 path.'))
-        # return res_pl_cpy
 
-
-    def copy_payloads_tdf(dict_rev_cnt, dir_path, pl_path_to_copy, row, df_file_loc):
+    def copy_payloads_tdf(self, dir_path, pl_path_to_copy, row, df_file_loc):
+        """
+        add all payloads for tdf pattern_category
+        :param dir_path: str
+            destination of payload file
+        :param pl_path_to_copy: str
+            source of payload file
+        :param row: Dataframe row
+            row of dataframe to get Vector name to find all payloads for given header/vector
+        :param df_file_loc
+            Dataframe to store all sources and destinations
+        :return df_file_loc: DataFrame
+            Dataframe updated with new source and destination of payload to be copied
+        """
         pl_name = 'tk_atpg_tdf_lpc' + re.search("(lpc)(.*)(_)(.*)(_)", row['Vector']).group(2) + '_slc_'
         pl_zip = pl_name + '*.stil.gz'
         # get a list of paths for all payload slices
@@ -276,14 +313,23 @@ class Preprocess():
         # copy payload zip files to target folder
         for zip in list_path_pl_zip:
             df_file_loc = df_file_loc.append({'source': zip, 'dest': dir_path}, ignore_index=True)
-            #res_pl_cpy += copy_payload(dict_rev_cnt, dir_path, zip)
+            # res_pl_cpy += copy_payload(dict_rev_cnt, dir_path, zip)
         return df_file_loc
 
-
-    def create_file_path(self,dest_dir, payload, row):
+    def create_file_path(self, dest_dir, payload, row):
+        """
+        Parses through ['Block', 'Bin Si Revision', 'DFT type', 'Vector Type', 'Vector', 'freq mode'] information for each vector
+        to determine unique filepath for destination of each header/payload group
+        :param dest_dir: str
+            base destination directory for all files
+        :param payload: str
+            each payload name received from mapping list
+        :param row: DataFrame row
+            row data such as ['Block', 'Bin Si Revision', 'DFT type', 'Vector Type', 'Vector', 'freq mode'] to parse through
+            to determine unique filepath for each header/payload grouping
+        """
         dir_path = os.path.join(dest_dir, self.chip_version)
-        folder_ordering = ['Bin Si Revision', 'Block', 'DFT type', 'Vector Type', 'Vector', 'freq mode']
-        for folder_name in folder_ordering:
+        for folder_name in self.folder_ordering:
             if folder_name == 'Vector':
                 comp_type = re.search("(lpc|lpu)", row[folder_name])[0]
                 if (row['DFT type'] == 'SAF'):
@@ -310,7 +356,6 @@ class Preprocess():
                 dir_path = os.path.join(dir_path, row[folder_name])
         return comp_type, dir_path, name
 
-
     def find_value_after_regex(self, payload, regex_value):
         full_name = re.search(regex_value, payload).group(2)
         split_name = re.split("_", full_name)
@@ -319,27 +364,20 @@ class Preprocess():
 
 
 class Generate_Pats():
+    """
+    Class generates PATS.txt files separated out into folders labeled with sequential numbers
+    Filepath dest + \pattern_execution\pattern_list\<freq_mode>\<pattern_type>\<vector_type>\<#>
+    Each batch of patterns is separated out by
+    """
 
     def __init__(self, conversion_log_csv_path, logger):
 
         self.conversion_log_csv_path = conversion_log_csv_path
         self.logger = logger
+        self.make_folder = CreateFolder()
 
-    def create_folder(self, dir):
-        """
-        Create the directory if not exists.
-
-        :param dir: str
-            directory to create
-        """
-        if not os.path.exists(dir):
-            try:
-                os.makedirs(dir)
-                self.logger.debug(f'Directory created: {dir}')
-            except Exception:
-                self.logger.exception(f"Error! Could not create directory {dir}")
-
-    def generate_pats_txt(self, pattern_category, vector_type, dir_pat, dir_exec, log_name, lim, list_dirs_exclude = [], pin_group ='OUT', enable_cyc_cnt=1, blocks=[], freq_modes = ['NOM', 'SVS', 'TUR', 'SVSD1']):
+    def generate_pats_txt(self, pattern_category, vector_type, dir_pat, dir_exec, log_name, lim, list_dirs_exclude=[],
+                          pin_group='OUT', enable_cyc_cnt=1, blocks=[], freq_modes=['NOM', 'SVS', 'TUR', 'SVSD1']):
         """
         Generate a set of PATS.txt files for pattern batch execution.
         :param vector_type: str
@@ -354,13 +392,13 @@ class Generate_Pats():
             conversion log name (w/o .csv extension)
         :param lim: int
             limit for the number of patterns to host in a PATS.txt file
-        :param list_dirs_exclude_full: list. default = []
+        :param list_dirs_exclude: list. default = []
             dir of DFT patterns to EXCLUDE from PATS.TXT
         :param pin_group: str. default = 'OUT'
             pin group mask. Choices are 'IN','OUT','ALL_PINS'
         :param enable_cyc_cnt: bool. default = True
             if True, actual cycle count of each pattern will be extracted from conversion log and put in PATS.txt; if false, cycle count will be 0 in PATS.txt
-        :param block: str. default = None
+        :param blocks: str. default = []
             Only needed for TDF pattern. This rule is derived based on Lahaina mapping files obtained from PTE (i.e. In Lahaina PTE mapping files,
             TDF patterns are classified by block, such as CPU and GPU, but ATPG are not. The rule can change if mapping file changes in other projects
         :param freq_modes: list. default = ['NOM', 'SVS', 'TUR', 'SVSD1']
@@ -384,37 +422,22 @@ class Generate_Pats():
             # # change all types to string and combine the strings separated by comma
             # to_write = ','.join(map(str, [do_file_name, cyc_cnt, pin_group, keep_state, load_pattern, dummy_cfg, dummy_xrl]))
 
-
             if pattern_category.lower() in 'tdf':
                 # dir to grab DO from
                 for block in blocks:
-                    path_top_level = os.path.join(dir_pat, block, pattern_category,vector_type)
+                    path_top_level = os.path.join(dir_pat, block, pattern_category, vector_type)
                     # dir to export PATS.txt to
                     dir_sub = os.path.join(dir_exec, block, pattern_category, vector_type)
                     # prefix for PATS.txt file name
                     pre_fix = 'PATS_' + pattern_category + '_' + vector_type + '_' + block + '_'
-            elif pattern_category.lower() in ['int','saf']:
+            elif pattern_category.lower() in ['int', 'saf']:
                 path_top_level = os.path.join(dir_pat, pattern_category, vector_type)
                 dir_sub = os.path.join(dir_exec, mode, pattern_category, vector_type)
                 pre_fix = 'PATS_' + pattern_category + '_' + vector_type + '_'
 
-            self.create_folder(dir_sub)
+            self.make_folder.createfolder(dir_sub)
 
-            do_files = []
-            for root, dirs, files in os.walk(path_top_level,topdown=True):
-                # exclude dirs
-                dirs[:] = [d for d in dirs if d not in list_dirs_exclude_full]
-
-                for file in files:
-                    if fnmatch.fnmatch(file, '*_XMD.do'):
-
-                        # get abs paths for DO patterns
-                        modes = "|".join(freq_modes)
-                        modes_pattern = "(.*)(\\\)(" + modes + ")(\\\)(.*)"
-                        if re.search(modes_pattern, root):
-                            if df_conv_log['pattern_name'].str.contains(file).any():
-                                do_file = os.path.join(root,file)
-                                do_files.append(do_file)
+            do_files = self.total_do_files(df_conv_log, freq_modes, list_dirs_exclude_full, path_top_level)
 
             # block = os.path.basename(path_block)
             # do_files = glob.glob(path_block + '/**/*.do', recursive=True)
@@ -431,15 +454,7 @@ class Generate_Pats():
             #     dir_sub = os.path.join(dir_exec, pattern_category, vector_type)
             #     pre_fix = 'PATS_' + pattern_category + '_' + vector_type + '_'
 
-            quo, rem = divmod(len(do_files), lim)
-            # set up the number of PATS.txt
-            if quo:
-                if rem:
-                    cnt = quo + 1
-                else:
-                    cnt = quo
-            else:
-                cnt = 1
+            cnt = self.pats_per_txt(do_files, lim)
 
             # # create subdir in execution dir
             # dir_sub = os.path.join(dir_exec,pattern_category,vector_type)
@@ -450,33 +465,14 @@ class Generate_Pats():
 
             for i in range(cnt):
 
-                pats_dir = os.path.join(dir_sub, str(i+1))
-                self.create_folder(pats_dir)
-                pats_txt_name = pre_fix + str(i+1) + '.txt'
-                pats_txt = os.path.join(pats_dir, pats_txt_name)
-                # write header
-                with open(pats_txt, 'w+') as f:
-                    f.write(header + '\n')
+                pats_txt = self.create_pats_txt(dir_sub, header, i, pre_fix)
 
                 # write patterns
-                start = i*lim
-                end = (i+1)*lim
+                start = i * lim
+                end = (i + 1) * lim
                 for do_file in do_files[start:end]:
 
-                    do_file_name = os.path.basename(do_file)
-                    if enable_cyc_cnt:
-
-                        try:
-                            filter = df_conv_log['pattern_name'] == do_file_name
-                            cyc_cnt = df_conv_log.loc[filter, 'extracted_cycle_count'].values[0]
-
-                        except Exception as e:
-                            print(e)
-                            cyc_cnt = 0
-                        # else:
-
-                    else:
-                        cyc_cnt = 0
+                    cyc_cnt = self.add_pattern_info(df_conv_log, do_file, enable_cyc_cnt)
 
                     # path_do_file = Path(do_file)
                     # print(path_do_file)
@@ -488,6 +484,119 @@ class Generate_Pats():
 
             print(f'*** PATS.txt generation completed for {pattern_category} {vector_type}{mode}')
 
+    def add_pattern_info(self, df_conv_log, do_file, enable_cyc_cnt):
+        """
+        Applies filter to extract the cycle count for each .do file that needs to be added to pats.txt
+        :param df_conv_log: DataFrame
+            dataframe of conversion log data
+        :param do_file: str
+            .do file name allows us to filter the conversion log dataframe for cycle count for specific vector
+        :param enable_cyc_cnt:
+
+        """
+        do_file_name = os.path.basename(do_file)
+        if enable_cyc_cnt:
+
+            try:
+                filter = df_conv_log['pattern_name'] == do_file_name
+                cyc_cnt = df_conv_log.loc[filter, 'extracted_cycle_count'].values[0]
+
+            except Exception as e:
+                print(e)
+                cyc_cnt = 0
+            # else:
+
+        else:
+            cyc_cnt = 0
+        return cyc_cnt
+
+    def total_do_files(self, df_conv_log, freq_modes, list_dirs_exclude_full, path_top_level):
+        """
+        Add file paths of all .do files to have a PATS.txt file created for
+        :param df_conv_log: DataFrame
+            conversion log dataframe
+        :param freq_modes: array
+            List of frequency modes that are used for filtering out filepaths
+        :param list_dirs_exclude_full: array
+            will exclude directories in array from creating pats.txt if found in filepath name
+        :param path_top_level: str
+            root path to begin topdown loop
+        """
+        do_files = []
+        for root, dirs, files in os.walk(path_top_level, topdown=True):
+            # exclude dirs
+            dirs[:] = [d for d in dirs if d not in list_dirs_exclude_full]
+
+            for file in files:
+                if fnmatch.fnmatch(file, '*_XMD.do'):
+
+                    # get abs paths for DO patterns
+                    modes = "|".join(freq_modes)
+                    modes_pattern = "(.*)(\\\)(" + modes + ")(\\\)(.*)"
+                    if re.search(modes_pattern, root):
+                        if df_conv_log['pattern_name'].str.contains(file).any():
+                            do_file = os.path.join(root, file)
+                            do_files.append(do_file)
+        return do_files
+
+    def pats_per_txt(self, do_files, lim):
+        """
+        Divides up number of .do file patterns to be run in each batch of pats.txt files based on the limit defined
+        :param do_files: array
+            list of all .do files that match criteria to be added to pats.txt
+        :param lim: int
+            max number of .do files to be run in single pats.txt
+        """
+        quo, rem = divmod(len(do_files), lim)
+        # set up the number of PATS.txt
+        if quo:
+            if rem:
+                cnt = quo + 1
+            else:
+                cnt = quo
+        else:
+            cnt = 1
+        return cnt
+
+    def create_pats_txt(self, dir_sub, header, i, pre_fix):
+        """
+        creates actual file and folder with sequential # to store pattern execution data
+        :param dir_sub: str
+            directory for pats.txt files to be stored
+        :param header: str
+            name of header file
+        :param i: int
+            folder number to store pats.txt in unique location
+        :param pre_fix: str
+            prefix to make pats.txt naming convention
+        """
+        pats_dir = os.path.join(dir_sub, str(i + 1))
+        self.make_folder.create_folder(pats_dir)
+        pats_txt_name = pre_fix + str(i + 1) + '.txt'
+        pats_txt = os.path.join(pats_dir, pats_txt_name)
+        # write header
+        with open(pats_txt, 'w+') as f:
+            f.write(header + '\n')
+        return pats_txt
+
+
+class CreateFolder():
+    """
+    class to create a new folder given a filepath
+    """
+    def create_folder(self, dir):
+        """
+        Create the directory if not exists.
+
+        :param dir: str
+            directory to create
+        """
+        if not os.path.exists(dir):
+            try:
+                os.makedirs(dir)
+                self.logger.debug(f'Directory created: {dir}')
+            except Exception:
+                self.logger.exception(f"Error! Could not create directory {dir}")
 
 # def main():
 #     # global rev
