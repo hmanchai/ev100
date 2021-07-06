@@ -6,6 +6,7 @@ import re
 import numpy as np
 import pandas as pd
 import fnmatch
+import matplotlib.pyplot as plt
 
 
 class PostProcess():
@@ -52,68 +53,52 @@ class PostProcess():
                     pattern_names[pattern] = pattern_index
                     if int(dlog_output.at[0, 'Failures']) != 0:
                         sn_df.at[pattern_index, sn] = 'F'
+                    if int(dlog_output.at[0,'PatternRunTime']) > 16:
+                        sn_df.at[pattern_index, sn] = 'T'
                     pattern_index += 1
 
         pattern_rows = list(pattern_names.items())
-        df_data = pd.DataFrame(pattern_rows, columns=["vector name", "Index"])
+        df_data = pd.DataFrame(pattern_rows, columns=["Pattern Name", "Index"])
+        regex = "(tk_atpg_)(.*)"
+        df_data["DFT Type"] = df_data.apply(lambda x: re.search(regex, x["Pattern Name"]).group(2).split("_")[0].upper(),
+                                            axis=1)
         df_data = pd.concat([df_data, sn_df], axis = 1)
         df_data.pop('Index')
+
         output_path = os.path.join(output_dir, run + "_postprocess.csv")
         df_data.to_csv(output_path, index=False, sep=',', header=True, mode='w')
+        self.passing_rate_graph(output_path)
 
-        # try:
-        #     # grab the latest csv
-        #     csv_to_edit = max(list_all_csv, key=os.path.getctime)
-        #     # csv_to_edit = "E:\johnny\dlog_csv_debugging\int_and_saf.csv"
-        # except ValueError:
-        #     print('\n*** Error! No dlog csv exists.')
-        # except Exception as e:
-        #     print(e)
-        #     print('\n*** Error! Please refer to Traceback message.')
-        # else:
-        #     # load csv
-        #     # df_dlog_raw = pd.read_csv(csv_to_edit, index_col=False)
-        #     df_dlog_raw = pd.read_csv(csv_to_edit, index_col=False)
-        #     # grab all gpio columns
-        #     df_dlog_gpio = df_dlog_raw.filter(regex='gpio_')
-        #     # add gpio names to fail count value
-        #     df_dlog_gpio_new = df_dlog_gpio.astype(str).apply(lambda x: x.name + ':' + x)
-        #     # replace 0 fail values with null
-        #     df_dlog_gpio_new.replace(':0', np.nan, regex=True, inplace=True)
-        #     # add a column to combine all the fail pin info
-        #     df_dlog_gpio_new['fail_pin'] = df_dlog_gpio_new.apply(lambda x: ','.join(x.dropna()), axis=1)
-        #
-        #     # columns to extract data from
-        #     list_cols = ['Date_Time', 'PatternName', 'Failures']
-        #     # trim raw dlog df
-        #     df_dlog = df_dlog_raw[list_cols]
-        #     # add in fail pin column
-        #     df_dlog['fail_pin'] = df_dlog_gpio_new['fail_pin']
-        #
-        #     # add a column for PATS.txt name
-        #     df_dlog['pats_txt'] = pats_txt
-        #     # print('df_dlog:\n', df_dlog.to_string())
-        #     df_dlog['voltage_mode'] = voltage_mode
-        #
-        #     # set up for csv output
-        #     csv_output = os.path.join(output_dir, output_csv_name + '.csv')
-        #     if os.path.exists(csv_output):
-        #         try:
-        #             print(f'\n*** Saving trimmed dlog csv to {csv_output}')
-        #             df_dlog.to_csv(csv_output, header=False, index=False, mode='a')
-        #         except PermissionError as e:
-        #             print(e)
-        #             csv_output_temp = os.path.join(output_dir, output_csv_name + '_backup.csv')
-        #             print(f'\n*** Saving to {csv_output_temp} instead.')
-        #             if os.path.exists(csv_output_temp):
-        #                 df_dlog.to_csv(csv_output_temp, header=False, index=False, mode='a')
-        #             else:
-        #                 df_dlog.to_csv(csv_output_temp, header=True, index=False, mode='w')
-        #         else:
-        #             print('\n***Dlog csv saving completed.')
-        #     else:
-        #         df_dlog.to_csv(csv_output, header=True, index=False, mode='w')
-        #         print('\n*** Dlog csv saving completed.')
+    def passing_rate_graph(self, output_path):
+        df_data = pd.read_csv(output_path)
+        passing_rate = {"INT": "", "SAF": "", "TDF": ""}
+        for dft_type in passing_rate.keys():
+            total_chips = 0
+            passing = 0
+            df_vector_type = df_data[df_data['DFT Type'].str.match(dft_type.upper())]
+            if df_vector_type.shape[0] == 0:
+                del passing_rate[dft_type]
+                break
+            df_vector_type.pop('Pattern Name')
+            df_vector_type.pop('DFT Type')
+            for col in df_vector_type:
+                total_chips += 1
+                if df_vector_type[col].isnull().sum() == df_vector_type.shape[0]:
+                    passing += 1
+            if total_chips != 0:
+                passing_rate[dft_type] = (passing / float(total_chips)) * 100
+
+        plt.title("|".join(passing_rate.keys()) + " Passing Rates")
+        plt.xlabel('Pattern Category')
+        plt.ylabel('Percentage (%)')
+        rates = pd.Series(passing_rate)
+        colors = list('rbgkymc')
+        rates.plot(
+            kind='bar',
+            color=colors,
+        )
+        plt.show()
+
 
 def main():
     chip_version = 'Waipio'
