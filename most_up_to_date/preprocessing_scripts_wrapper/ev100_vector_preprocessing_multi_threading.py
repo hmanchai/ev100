@@ -377,7 +377,7 @@ class Generate_Pats():
         self.make_folder = CreateFolder()
 
     def generate_pats_txt(self, pattern_category, vector_type, dir_pat, dir_exec, log_name, lim, list_dirs_exclude=[],
-                          pin_group='OUT', enable_cyc_cnt=1, blocks=[], freq_modes=['NOM', 'SVS', 'TUR', 'SVSD1']):
+                          pin_group='OUT', enable_cyc_cnt=1, block = None, freq_modes=['NOM', 'SVS', 'TUR', 'SVSD1']):
         """
         Generate a set of PATS.txt files for pattern batch execution.
         :param vector_type: str
@@ -398,7 +398,7 @@ class Generate_Pats():
             pin group mask. Choices are 'IN','OUT','ALL_PINS'
         :param enable_cyc_cnt: bool. default = True
             if True, actual cycle count of each pattern will be extracted from conversion log and put in PATS.txt; if false, cycle count will be 0 in PATS.txt
-        :param blocks: str. default = []
+        :param block: str. default = None
             Only needed for TDF pattern. This rule is derived based on Lahaina mapping files obtained from PTE (i.e. In Lahaina PTE mapping files,
             TDF patterns are classified by block, such as CPU and GPU, but ATPG are not. The rule can change if mapping file changes in other projects
         :param freq_modes: list. default = ['NOM', 'SVS', 'TUR', 'SVSD1']
@@ -424,20 +424,22 @@ class Generate_Pats():
 
             if pattern_category.lower() in 'tdf':
                 # dir to grab DO from
-                for block in blocks:
-                    path_top_level = os.path.join(dir_pat, block, pattern_category, vector_type)
-                    # dir to export PATS.txt to
-                    dir_sub = os.path.join(dir_exec, block, pattern_category, vector_type)
-                    # prefix for PATS.txt file name
-                    pre_fix = 'PATS_' + pattern_category + '_' + vector_type + '_' + block + '_'
+                #for block in blocks:
+                #path_top_level = os.path.join(dir_pat, block, pattern_category, vector_type)
+                path_top_level = dir_pat
+                # dir to export PATS.txt to
+                dir_sub = os.path.join(dir_exec, block, mode, pattern_category, vector_type)
+                # prefix for PATS.txt file name
+                pre_fix = 'PATS_' + pattern_category + '_' + vector_type + '_' + block + '_'
             elif pattern_category.lower() in ['int', 'saf']:
-                path_top_level = os.path.join(dir_pat, pattern_category, vector_type)
+                #path_top_level = os.path.join(dir_pat, pattern_category, vector_type)
+                path_top_level = dir_pat
                 dir_sub = os.path.join(dir_exec, mode, pattern_category, vector_type)
                 pre_fix = 'PATS_' + pattern_category + '_' + vector_type + '_'
 
             self.make_folder.createfolder(dir_sub)
 
-            do_files = self.total_do_files(df_conv_log, freq_modes, list_dirs_exclude_full, path_top_level)
+            do_files = self.total_do_files(df_conv_log, freq_modes, list_dirs_exclude_full, path_top_level, pattern_category, vector_type, block)
 
             # block = os.path.basename(path_block)
             # do_files = glob.glob(path_block + '/**/*.do', recursive=True)
@@ -510,7 +512,7 @@ class Generate_Pats():
             cyc_cnt = 0
         return cyc_cnt
 
-    def total_do_files(self, df_conv_log, freq_modes, list_dirs_exclude_full, path_top_level):
+    def total_do_files(self, df_conv_log, freq_modes, list_dirs_exclude_full, path_top_level, pattern_category, vector_type, block):
         """
         Add file paths of all .do files to have a PATS.txt file created for
         :param df_conv_log: DataFrame
@@ -533,10 +535,14 @@ class Generate_Pats():
                     # get abs paths for DO patterns
                     modes = "|".join(freq_modes)
                     modes_pattern = "(.*)(\\\)(" + modes + ")(\\\)(.*)"
+                    #root.replace("\\", r"\\")
                     if re.search(modes_pattern, root):
-                        if df_conv_log['pattern_name'].str.contains(file).any():
-                            do_file = os.path.join(root, file)
-                            do_files.append(do_file)
+                        if re.search(pattern_category, root):
+                            if re.search(vector_type, root):
+                                if re.search(block, root):
+                                    if df_conv_log['pattern_name'].str.contains(file).any():
+                                        do_file = os.path.join(root, file)
+                                        do_files.append(do_file)
         return do_files
 
     def pats_per_txt(self, do_files, lim):

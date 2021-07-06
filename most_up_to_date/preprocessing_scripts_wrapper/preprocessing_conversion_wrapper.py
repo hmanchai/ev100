@@ -85,7 +85,7 @@ class wrapper():
                 vector_types = self.vector_type.split("|")
                 for type in vector_types:
                     preprocess.generate_pats_txt(pat_cat, type, dir_pat, dir_exec, log_name, lim, list_dirs_exclude,
-                                                 pin_group, enable_cyc_cnt, blocks, freq_modes)
+                                                 pin_group, enable_cyc_cnt, block, freq_modes)
 
 
 def main():
@@ -225,23 +225,26 @@ def needed_conversion_pats(chip_version, input_dic, pattern_category, rev,
 
 
 def needed_conversion(input_dic):
-    velocity_dft_cfg_path = str(input(
-        "Enter velocity configuration file path: \n # ENTER NO INPUT - DEFAULT \"" +
-        r"\\qctdfsrt\prj\vlsi\vetch_pst\c_weicya\ev100\seed_files\velocity_cfg\waipio\waipio_WY_dft_universal_v1.cfg" + "\"\n ")
-                                or r"\\qctdfsrt\prj\vlsi\vetch_pst\c_weicya\ev100\seed_files\velocity_cfg\waipio\waipio_WY_dft_universal_v1.cfg")
+    # velocity_dft_cfg_path = str(input(
+    #     "Enter velocity configuration file path: \n # ENTER NO INPUT - DEFAULT \"" +
+    #     r"\\qctdfsrt\prj\vlsi\vetch_pst\c_weicya\ev100\seed_files\velocity_cfg\waipio\waipio_WY_dft_universal_v1.cfg" + "\"\n ")
+    #                             or r"\\qctdfsrt\prj\vlsi\vetch_pst\c_weicya\ev100\seed_files\velocity_cfg\waipio\waipio_WY_dft_universal_v1.cfg")
 
+    velocity_dft_cfg_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\c_weicya\ev100\seed_files\velocity_cfg" + "\\" + chip_version + "\\" + chip_version + "_WY_dft_universal_v1.cfg"
     input_dic['velocity_dft_cfg_path'] = velocity_dft_cfg_path
 
-    patch_timesets_path = str(input(
-        "Enter patch timesets file path: \n # ENTER NO INPUT - DEFAULT \"" +
-        r"\\qctdfsrt\prj\vlsi\vetch_pst\c_weicya\ev100\seed_files\patch_files\waipio\patch_timesets.txt" + "\"\n ")
-                              or r"\\qctdfsrt\prj\vlsi\vetch_pst\c_weicya\ev100\seed_files\patch_files\waipio\patch_timesets.txt")
+    # patch_timesets_path = str(input(
+    #     "Enter patch timesets file path: \n # ENTER NO INPUT - DEFAULT \"" +
+    #     r"\\qctdfsrt\prj\vlsi\vetch_pst\c_weicya\ev100\seed_files\patch_files\waipio\patch_timesets.txt" + "\"\n ")
+    #                           or r"\\qctdfsrt\prj\vlsi\vetch_pst\c_weicya\ev100\seed_files\patch_files\waipio\patch_timesets.txt")
+    patch_timesets_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\c_weicya\ev100\seed_files\patch_files\waipio\patch_timesets.txt"
     input_dic['patch_timesets_path'] = patch_timesets_path
 
-    patch_timesets_50mhz_path = str(input(
-        "Enter patch timesets 50 MHz file path: \n # ENTER NO INPUT - DEFAULT \"" +
-        r"\\qctdfsrt\prj\vlsi\vetch_pst\c_weicya\ev100\seed_files\patch_files\lahaina\patch_timesets_50MHz.txt" + "\"\n ")
-                                    or r"\\qctdfsrt\prj\vlsi\vetch_pst\c_weicya\ev100\seed_files\patch_files\lahaina\patch_timesets_50MHz.txt")
+    # patch_timesets_50mhz_path = str(input(
+    #     "Enter patch timesets 50 MHz file path: \n # ENTER NO INPUT - DEFAULT \"" +
+    #     r"\\qctdfsrt\prj\vlsi\vetch_pst\c_weicya\ev100\seed_files\patch_files\lahaina\patch_timesets_50MHz.txt" + "\"\n ")
+    #                                 or r"\\qctdfsrt\prj\vlsi\vetch_pst\c_weicya\ev100\seed_files\patch_files\lahaina\patch_timesets_50MHz.txt")
+    patch_timesets_50mhz_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\c_weicya\ev100\seed_files\patch_files\lahaina\patch_timesets_50MHz.txt"
     input_dic['patch_timesets_50mhz_path'] = patch_timesets_50mhz_path
 
     enable_del_zip_bool = str(
@@ -266,9 +269,10 @@ def needed_zip_conversion(input_dic):
 
 
 def needed_for_zip(chip_version, input_dic, rev):
-    par_vector_path_r1 = str(input("Enter the STIL file resource folder: \n # ENTER NO INPUT - DEFAULT \"" +
-                                   r'\\qctdfsrt\prj\qct\chips' + "\\" + chip_version + r'\sandiego\test\vcd' + "\\" + rev + r'_sec5lpe\tester_vcd' + "\"\n ") or
-                             r'\\qctdfsrt\prj\qct\chips' + "\\" + chip_version + r'\sandiego\test\vcd' + "\\" + rev + r'_sec5lpe\tester_vcd')
+    # par_vector_path_r1 = str(input("Enter the STIL file resource folder: \n # ENTER NO INPUT - DEFAULT \"" +
+    #                                r'\\qctdfsrt\prj\qct\chips' + "\\" + chip_version + r'\sandiego\test\vcd' + "\\" + rev + r'_sec5lpe\tester_vcd' + "\"\n ") or
+    #                          r'\\qctdfsrt\prj\qct\chips' + "\\" + chip_version + r'\sandiego\test\vcd' + "\\" + rev + r'_sec5lpe\tester_vcd')
+    par_vector_path_r1 =  r'\\qctdfsrt\prj\qct\chips' + "\\" + chip_version + r'\sandiego\test\vcd' + "\\" + rev + r'_sec5lpe\tester_vcd'
     input_dic['par_vector_path_r1'] = par_vector_path_r1
     return par_vector_path_r1
 
