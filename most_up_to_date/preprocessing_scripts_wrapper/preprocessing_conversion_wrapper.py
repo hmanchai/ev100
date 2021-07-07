@@ -1,12 +1,14 @@
 import os
 import time
-import logging
+import preprocessing_logger
 import ev100_vector_preprocessing_multi_threading
 import json
 import ev100_vector_conversion_waipio_std
+from preprocessing_logger import Logger
 
 
-class wrapper():
+
+class Wrapper():
     def __init__(self, rev, chip_version, py_log_path, py_log_name, pattern_category, vector_type, updated_date_time):
         self.rev = rev
         self.chip_version = chip_version
@@ -15,29 +17,8 @@ class wrapper():
         self.py_log_path = py_log_path
         self.pattern_category = pattern_category
         self.vector_type = vector_type
-        self.logger = self.set_up_logger()
+        self.logger = Logger.set_up_logger(py_log_path, py_log_name)
 
-    def set_up_logger(self):
-        # set up logger
-        logger = logging.getLogger(__name__)
-        logger.setLevel(logging.DEBUG)
-
-        formatter = logging.Formatter('%(asctime)s:%(name)s:%(message)s')
-
-        # py_log = os.path.join(py_log_path,'conversion_test.log')
-        py_log = os.path.join(self.py_log_path, self.py_log_name)
-        # py_log = os.path.join(py_log_path,'TDF_zip_transfer_log.log')
-        file_handler = logging.FileHandler(py_log)
-        file_handler.setLevel(logging.INFO)
-        file_handler.setFormatter(formatter)
-
-        stream_handler = logging.StreamHandler()
-        # stream_handler.setLevel(logging.DEBUG)
-        stream_handler.setFormatter(formatter)
-
-        logger.addHandler(file_handler)
-        logger.addHandler(stream_handler)
-        return logger
 
     def copy_stil_zip_files(self, dest, map_path, par_vector_path_r1):
         preprocess = ev100_vector_preprocessing_multi_threading.Preprocess(self.rev, self.chip_version,
@@ -45,7 +26,7 @@ class wrapper():
                                                                            self.pattern_category, self.vector_type,
                                                                            self.updated_date_time, self.logger, dest,
                                                                            map_path, par_vector_path_r1)
-        preprocess.store_all_zip_atpg(dest, self.pattern_category, self.vector_type)
+        preprocess.store_all_zip_atpg()
 
     def velocity_conversion(self, conversion_log_csv_path, dest, blocks, log_name, velocity_dft_cfg_path,
                             patch_timesets_path,
@@ -103,39 +84,7 @@ def main():
 
     if use_json.lower() == 'n':
 
-        chip_version, convert_velocity, copy_zip, dest, generate_pats, pattern_category, py_log_name, py_log_path, rev, vector_type = input_to_run(
-            input_dic, updated_date_time)
-
-        preprocess_convert = wrapper(rev, chip_version, py_log_path, py_log_name, pattern_category, vector_type,
-                                     updated_date_time)
-
-        ## to run copy zip STIL files
-        if copy_zip.lower() == 'y':
-            par_vector_path_r1 = needed_for_zip(chip_version, input_dic, rev)
-
-        ## to run copy zip STIL files and conversion velocity
-        if copy_zip.lower() == 'y' or convert_velocity.lower() == 'y':
-            map_path = needed_zip_conversion(input_dic)
-
-        if convert_velocity.lower() == 'y':
-            # to run conversion velocity
-            enable_del_zip, patch_timesets_50mhz_path, patch_timesets_path, velocity_dft_cfg_path = needed_conversion(
-                input_dic)
-
-        # to run conversion velocity and PATS.txt generation
-        if convert_velocity == 'y' or generate_pats == 'y':
-            blocks, conversion_log_csv_path, log_name = needed_conversion_pats(chip_version,
-                                                                               input_dic, pattern_category, rev,
-                                                                               updated_date,
-                                                                               vector_type)
-        if generate_pats == 'y':
-            enable_cyc_cnt, freq_modes, lim, list_dirs_exclude, pin_group = needed_pats(input_dic)
-
-        json_filename = str(input(
-            "Save inputs in .json file: \n # ENTER NO INPUT - DEFAULT \"inputs_" + updated_date_time + ".json\"\n ") or 'inputs_' + updated_date_time + '.json')
-
-        with open(json_filename, 'w') as outfile:
-            json.dump(input_dic, outfile, indent=2)
+        preprocess_convert = generate_json_file(input_dic, updated_date, updated_date_time)
     else:
         while True:
             try:
@@ -177,6 +126,37 @@ def main():
     if generate_pats == 'y':
         preprocess_convert.generate_pats_txt(conversion_log_csv_path, dest, log_name, lim, list_dirs_exclude, pin_group,
                                              enable_cyc_cnt, blocks, freq_modes)
+
+
+def generate_json_file(input_dic, updated_date, updated_date_time):
+    global chip_version, convert_velocity, copy_zip, dest, generate_pats, pattern_category, py_log_name, py_log_path, rev, vector_type, par_vector_path_r1, map_path, enable_del_zip, patch_timesets_50mhz_path, patch_timesets_path, velocity_dft_cfg_path, blocks, conversion_log_csv_path, log_name, enable_cyc_cnt, freq_modes, lim, list_dirs_exclude, pin_group
+    chip_version, convert_velocity, copy_zip, dest, generate_pats, pattern_category, py_log_name, py_log_path, rev, vector_type = input_to_run(
+        input_dic, updated_date_time)
+    preprocess_convert = wrapper(rev, chip_version, py_log_path, py_log_name, pattern_category, vector_type,
+                                 updated_date_time)
+    ## to run copy zip STIL files
+    if copy_zip.lower() == 'y':
+        par_vector_path_r1 = needed_for_zip(chip_version, input_dic, rev)
+    ## to run copy zip STIL files and conversion velocity
+    if copy_zip.lower() == 'y' or convert_velocity.lower() == 'y':
+        map_path = needed_zip_conversion(input_dic)
+    if convert_velocity.lower() == 'y':
+        # to run conversion velocity
+        enable_del_zip, patch_timesets_50mhz_path, patch_timesets_path, velocity_dft_cfg_path = needed_conversion(
+            input_dic)
+    # to run conversion velocity and PATS.txt generation
+    if convert_velocity == 'y' or generate_pats == 'y':
+        blocks, conversion_log_csv_path, log_name = needed_conversion_pats(chip_version,
+                                                                           input_dic, pattern_category, rev,
+                                                                           updated_date,
+                                                                           vector_type)
+    if generate_pats == 'y':
+        enable_cyc_cnt, freq_modes, lim, list_dirs_exclude, pin_group = needed_pats(input_dic)
+    json_filename = str(input(
+        "Save inputs in .json file: \n # ENTER NO INPUT - DEFAULT \"inputs_" + updated_date_time + ".json\"\n ") or 'inputs_' + updated_date_time + '.json')
+    with open(json_filename, 'w') as outfile:
+        json.dump(input_dic, outfile, indent=2)
+    return preprocess_convert
 
 
 def needed_pats(input_dic):
