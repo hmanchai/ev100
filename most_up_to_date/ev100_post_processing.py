@@ -24,7 +24,7 @@ class PostProcess():
             voltage modes associated with DFT patterns, e.g. svs, nom, tur
         """
         # csv_path = os.path.join(dlog_dir, '*.csv')
-        dlog_dir = os.path.join(base_dir, 'pattern_execution', 'execution_dlog', run, 'dlog')
+        dlog_dir = os.path.join(base_dir, 'pattern_execution (1)', 'execution_dlog', run, 'dlog')
         pattern_names = collections.OrderedDict()
         pattern_index = 0
 
@@ -33,7 +33,7 @@ class PostProcess():
         sn_files = {}
         path = glob.glob(dlog_dir + "\\*\\*\\")
         freq_mode = re.search("(.*)(\\\)(.*)(\\\)$", path[0]).group(3)
-        output_dir = os.path.join(output_dir, freq_mode)
+        output_dir = os.path.join(output_dir, freq_mode, run)
 
         self.create_folder(output_dir)
 
@@ -68,7 +68,7 @@ class PostProcess():
                                             axis=1)
         df_data = pd.concat([df_data, sn_df], axis = 1)
         df_data.pop('Index')
-        output_file = os.path.join(output_dir, run + "_" + freq_mode + "_postprocess.csv")
+        output_file = os.path.join(output_dir, freq_mode + "_postprocess_failures.csv")
         df_data.to_csv(output_file, index=False, sep=',', header=True, mode='w')
         return output_file
 
@@ -88,7 +88,9 @@ class PostProcess():
     def passing_rate_graph(self, output_path):
         df_data = pd.read_csv(output_path)
         output_path = re.search("(.*)(\\\)(.*)$", output_path).group(1)
-        freq_mode = re.search("(.*)(\\\)(.*)$", output_path).group(3)
+        freq_mode = re.search("(.*)(\\\)(.*)(\\\)(.*)$", output_path).group(3)
+        run = re.search("(.*)(\\\)(.*)$", output_path).group(3)
+        print(run)
         passing_rate = {"INT": "", "SAF": "", "TDF": ""}
         for dft_type in passing_rate.keys():
             pass_fail = {"pass": "", "fail": ""}
@@ -123,7 +125,7 @@ class PostProcess():
             if total_chips != 0:
                 passing_rate[dft_type] = (passing / float(total_chips)) * 100
 
-        title = freq_mode + " " + "_".join(passing_rate.keys()) + " Passing Rates"
+        title = freq_mode + " " + "_".join(passing_rate.keys()) + " Passing Percentage"
         plt.title(title)
         plt.xlabel('Pattern Category')
         plt.ylabel('Percentage Passing (%)')
@@ -144,9 +146,9 @@ class PostProcess():
     def add_labels(self, x, y, percent = False):
         for i in range(len(x)):
             if percent:
-                plt.text(i, y[i], str(y[i]) + "%", ha='center', fontweight='bold')
+                plt.text(i, y[i], str(round(y[i], 2)) + "%", ha='center', fontweight='bold')
             else:
-                plt.text(i, y[i], str(y[i]), ha='center', fontweight = 'bold')
+                plt.text(i, y[i], str(round(y[i], 2)), ha='center', fontweight = 'bold')
 
     def tdf_shmoo_graph(self):
         print('tdf')
@@ -154,7 +156,7 @@ class PostProcess():
 def main():
     chip_version = 'Waipio'
     base_dir = r"C:\Users\rpenmatc\OneDrive - Qualcomm\Desktop"
-    run = "dft_run_2021-07-01"
+    run = "dft_run_2021-07-07"
     output_dir = r"C:\Users\rpenmatc\OneDrive - Qualcomm\Desktop\post_test"
     post = PostProcess()
     output_file = post.dlog_csv_post_process(base_dir, run, output_dir)
