@@ -9,19 +9,22 @@ import matplotlib.pyplot as plt
 
 
 class PostProcess():
+    """
+    class to hold all post processing scripts
+    generates graphs and csv files
+    """
     def dlog_csv_post_process(self, base_dir, run, output_dir):
         """
         process individual dlog csv's to generate a summary test log csv
-        :param dlog_dir: str
-            directory to individual dlog csv
+        :param base_dir: str
+            base directory for all patterns - folder above pattern_execution (pattern_execution, execution_dlog, run, dlog)
+            all added automatically to filepath
+        :param run: str
+            run folder name - folder above dlog
         :param output_dir: str
-            directory to dump test log (.csv format)
-        :param output_csv_name: str
-            test log name (w/o .csv)
-        :param pats_txt: str
-            pats.txt file name
-        :param voltage_mode: str
-            voltage modes associated with DFT patterns, e.g. svs, nom, tur
+            directory to hold postprocessing output
+        :return output_file: str
+            returns output file of csv (file path used in graph generation)
         """
         # csv_path = os.path.join(dlog_dir, '*.csv')
         dlog_dir = os.path.join(base_dir, 'pattern_execution', 'execution_dlog', run, 'dlog')
