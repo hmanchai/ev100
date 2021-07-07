@@ -1,14 +1,10 @@
-from ev100_vector_preprocessing_multi_threading import CreateFolder
+from create_folder_and_logger import CreateFolder
 import argparse
 import fnmatch
-import glob
-import multiprocessing
 import os
 import re
-import subprocess
 import time
-from datetime import timedelta
-from preprocessing_logger import Logger
+from create_folder_and_logger import Logger
 
 import pandas as pd
 
@@ -250,9 +246,9 @@ parser.add_argument('-rev', dest='rev', type=str,
 parser.add_argument('-chip_version', dest='chip_version', type=str,
                     help='chip version type ex. waipio')
 parser.add_argument('-pattern_category', dest='pattern_category', type=str,
-                    help='Enter the pattern categories (separated by | ex. SAF|INT|TDF')
+                    help='Enter the pattern category ( ex. SAF, INT, TDF')
 parser.add_argument('-vector_type', dest='vector_type', type=str,
-                    help='Enter the vector types separated by | ex. PROD|EVAL')
+                    help='Enter the vector type ex. PROD, EVAL')
 parser.add_argument('-dest', dest='dest', type=str,
                     help='destination  of base file path for files to by copied')
 parser.add_argument('-map_path', dest='map_path', type=str, help='file path to vector mapping file')
@@ -261,19 +257,17 @@ parser.add_argument('-block', dest='block', type=str,
 parser.add_argument('-lim', dest='lim', type=int, help='Enter lim for # of patterns in each PATS.txt #')
 parser.add_argument('-pin_group', dest='pin_group', type=str, help="Enter pin group (ex. IN, OUT, or ALL_PINS)")
 parser.add_argument('-freq_mode_list', dest='freq_mode_list', type=str,
-                    help="Enter the frequency modes (separated by | ex. SVS|NOM|TUR)")
+                    help="Enter the frequency modes (separated by , ex. SVS,NOM,TUR)")
 parser.add_argument('-enable_cyc_cnt', dest='enable_cyc_cnt', type=int, help="Enter 1 or 0 to set enable cycle count")
 parser.add_argument('-exclude_dirs', dest='exclude_dirs', type=str,
-                    help="Enter list of directories to exclude (separated by |)")
+                    help="Enter list of directories to exclude (separated by ,)")
 args = parser.parse_args()
-freq_modes = args.freq_mode_list.split("|")
-list_dirs_exclude = args.exclude_dirs.split("|")
+freq_modes = args.freq_mode_list.split(",")
+list_dirs_exclude = args.exclude_dirs.split(",")
 
 py_log_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\atpg_cdp" + "\\" + args.chip_version + "\\" + args.rev + r'\py_log'
 
-pat_name = args.pattern_category.replace("|", "_")
-vec_name = args.vector_type.replace("|", "_")
-log_name = 'conversion_log_' + pat_name + "_" + vec_name + "_" + updated_date_time
+log_name = 'conversion_log_' + args.pattern_category + "_" + args.vector_type + "_" + updated_date
 
 conversion_log_csv_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\atpg_cdp" + "\\" + args.chip_version + "\\" + args.rev + r"\conversion_log"
 
@@ -282,5 +276,5 @@ dir_exec = os.path.join(args.dest, 'pattern_execution', 'pattern_list')
 
 preprocess_convert = Generate_Pats(conversion_log_csv_path, logger)
 
-preprocess_convert.generate_pats_txt(pat_name, vec_name, args.dest, dir_exec, log_name, args.lim, args.list_dirs_exclude,
+preprocess_convert.generate_pats_txt(args.pattern_category, args.vector_type, args.dest, dir_exec, log_name, args.lim, list_dirs_exclude,
                           args.pin_group, args.enable_cyc_cnt, args.block, freq_modes)

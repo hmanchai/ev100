@@ -7,7 +7,7 @@ import re
 import subprocess
 import time
 from datetime import timedelta
-from preprocessing_logger import Logger
+from create_folder_and_logger import Logger
 
 import pandas as pd
 from gevent import monkey
@@ -372,23 +372,6 @@ class Preprocess():
 
 
 
-class CreateFolder():
-    """
-    class to create a new folder given a filepath
-    """
-    def create_folder(self, dir):
-        """
-        Create the directory if not exists.
-
-        :param dir: str
-            directory to create
-        """
-        if not os.path.exists(dir):
-            try:
-                os.makedirs(dir)
-                logger.debug(f'Directory created: {dir}')
-            except Exception:
-                logger.exception(f"Error! Could not create directory {dir}")
 
 # def main():
 #     # global rev
@@ -465,7 +448,6 @@ updated_date_time = time.strftime("%Y%m%d-%H%M%S")
 updated_date = time.strftime("%Y%m%d")
 py_log_name = 'py_conversion_' + updated_date_time + '.log'
 
-#def preprocessing():
 
 
 parser = argparse.ArgumentParser(description='Execute preprocessing script')
@@ -473,9 +455,10 @@ parser.add_argument('-rev', dest='rev', type=str,
                     help='revision number ex. r1')
 parser.add_argument('-chip_version', dest='chip_version', type=str,
                     help='chip version type ex. waipio')
-parser.add_argument('-pattern_category', dest='pattern_category', type=str, help='Enter the pattern categories (separated by | ex. SAF|INT|TDF')
+parser.add_argument('-pattern_category', dest='pattern_category', type=str,
+                    help='Enter the pattern category ( ex. SAF, INT, TDF')
 parser.add_argument('-vector_type', dest='vector_type', type=str,
-                    help='Enter the vector types separated by | ex. PROD|EVAL')
+                    help='Enter the vector type ex. PROD, EVAL')
 parser.add_argument('-dest', dest='dest', type=str,
                     help='destination  of base file path for files to by copied')
 parser.add_argument('-map_path', dest='map_path', type=str, help='file path to vector mapping file')

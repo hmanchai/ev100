@@ -23,3 +23,20 @@ class Logger():
         logger.addHandler(file_handler)
         logger.addHandler(stream_handler)
         return logger
+
+class CreateFolder():
+    """
+    class to create a new folder given a filepath
+    """
+    def create_folder(self, dir):
+        """
+        Create the directory if not exists.
+
+        :param dir: str
+            directory to create
+        """
+        if not os.path.exists(dir):
+            try:
+                os.makedirs(dir)
+            except Exception:
+                print("Error! Could not create directory " + dir)

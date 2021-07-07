@@ -1,14 +1,14 @@
 import os
 import time
-import preprocessing_logger
+import create_folder_and_logger
 import ev100_vector_preprocessing_multi_threading
 import json
 import ev100_vector_conversion_waipio_std
-from preprocessing_logger import Logger
+from create_folder_and_logger import Logger
 
 
 
-class Wrapper():
+class wrapper():
     def __init__(self, rev, chip_version, py_log_path, py_log_name, pattern_category, vector_type, updated_date_time):
         self.rev = rev
         self.chip_version = chip_version
