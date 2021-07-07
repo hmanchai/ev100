@@ -24,7 +24,7 @@ class PostProcess():
             voltage modes associated with DFT patterns, e.g. svs, nom, tur
         """
         # csv_path = os.path.join(dlog_dir, '*.csv')
-        dlog_dir = os.path.join(base_dir, 'pattern_execution (1)', 'execution_dlog', run, 'dlog')
+        dlog_dir = os.path.join(base_dir, 'pattern_execution', 'execution_dlog', run, 'dlog')
         pattern_names = collections.OrderedDict()
         pattern_index = 0
 
@@ -90,7 +90,6 @@ class PostProcess():
         output_path = re.search("(.*)(\\\)(.*)$", output_path).group(1)
         freq_mode = re.search("(.*)(\\\)(.*)(\\\)(.*)$", output_path).group(3)
         run = re.search("(.*)(\\\)(.*)$", output_path).group(3)
-        print(run)
         passing_rate = {"INT": "", "SAF": "", "TDF": ""}
         for dft_type in passing_rate.keys():
             pass_fail = {"pass": "", "fail": ""}
@@ -121,7 +120,7 @@ class PostProcess():
             )
             output_plot = os.path.join(output_path, title + '.jpg')
             plt.savefig(output_plot)
-            plt.show()
+
             if total_chips != 0:
                 passing_rate[dft_type] = (passing / float(total_chips)) * 100
 
@@ -141,7 +140,7 @@ class PostProcess():
 
         output_plot = os.path.join(output_path, title + '.jpg')
         plt.savefig(output_plot)
-        plt.show()
+
 
     def add_labels(self, x, y, percent = False):
         for i in range(len(x)):
@@ -155,9 +154,9 @@ class PostProcess():
 
 def main():
     chip_version = 'Waipio'
-    base_dir = r"C:\Users\rpenmatc\OneDrive - Qualcomm\Desktop"
+    base_dir = r"G:\ATPG_CDP"
     run = "dft_run_2021-07-07"
-    output_dir = r"C:\Users\rpenmatc\OneDrive - Qualcomm\Desktop\post_test"
+    output_dir = r"G:\ATPG_CDP\pattern_execution\output"
     post = PostProcess()
     output_file = post.dlog_csv_post_process(base_dir, run, output_dir)
     post.passing_rate_graph(output_file)
