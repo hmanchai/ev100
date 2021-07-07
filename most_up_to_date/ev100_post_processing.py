@@ -1,6 +1,5 @@
 import collections
 import glob
-import numbers
 import os
 import re
 import numpy as np
@@ -32,6 +31,11 @@ class PostProcess():
         list_results = []
         sn_list = []
         sn_files = {}
+        path = glob.glob(dlog_dir + "\\*\\*\\")
+        freq_mode = re.search("(.*)(\\\)(.*)(\\\)$", path[0]).group(3)
+        output_dir = os.path.join(output_dir, freq_mode)
+
+        self.create_folder(output_dir)
 
         for d in os.listdir(dlog_dir):
             sn_dir = os.path.join(dlog_dir, d)
@@ -64,15 +68,30 @@ class PostProcess():
                                             axis=1)
         df_data = pd.concat([df_data, sn_df], axis = 1)
         df_data.pop('Index')
+        output_file = os.path.join(output_dir, run + "_" + freq_mode + "_postprocess.csv")
+        df_data.to_csv(output_file, index=False, sep=',', header=True, mode='w')
+        return output_file
 
-        output_path = os.path.join(output_dir, run + "_postprocess.csv")
-        df_data.to_csv(output_path, index=False, sep=',', header=True, mode='w')
-        self.passing_rate_graph(output_path)
+    def create_folder(self, dir):
+        """
+        Create the directory if not exists.
+
+        :param dir: str
+            directory to create
+        """
+        if not os.path.exists(dir):
+            try:
+                os.makedirs(dir)
+            except Exception:
+                print("Error! Could not create directory " + dir)
 
     def passing_rate_graph(self, output_path):
         df_data = pd.read_csv(output_path)
+        output_path = re.search("(.*)(\\\)(.*)$", output_path).group(1)
+        freq_mode = re.search("(.*)(\\\)(.*)$", output_path).group(3)
         passing_rate = {"INT": "", "SAF": "", "TDF": ""}
         for dft_type in passing_rate.keys():
+            pass_fail = {"pass": "", "fail": ""}
             total_chips = 0
             passing = 0
             df_vector_type = df_data[df_data['DFT Type'].str.match(dft_type.upper())]
@@ -85,20 +104,52 @@ class PostProcess():
                 total_chips += 1
                 if df_vector_type[col].isnull().sum() == df_vector_type.shape[0]:
                     passing += 1
+            pass_fail["pass"] = passing
+            pass_fail["fail"] = total_chips - passing
+            title = freq_mode + " " + dft_type + " Pass or Fail"
+            plt.title(title)
+            plt.ylabel("# of Chips")
+            self.add_labels(list(pass_fail.keys()), list(pass_fail.values()))
+            rates = pd.Series(pass_fail)
+            colors = list('bgrkymc')
+
+            rates.plot(
+                kind='bar',
+                color=colors,
+            )
+            output_plot = os.path.join(output_path, title + '.jpg')
+            plt.savefig(output_plot)
+            plt.show()
             if total_chips != 0:
                 passing_rate[dft_type] = (passing / float(total_chips)) * 100
 
-        plt.title("|".join(passing_rate.keys()) + " Passing Rates")
+        title = freq_mode + " " + "_".join(passing_rate.keys()) + " Passing Rates"
+        plt.title(title)
         plt.xlabel('Pattern Category')
-        plt.ylabel('Percentage (%)')
+        plt.ylabel('Percentage Passing (%)')
+        self.add_labels(list(passing_rate.keys()), list(passing_rate.values()), True)
+        plt.ylim(0, 100)
         rates = pd.Series(passing_rate)
-        colors = list('rbgkymc')
+        colors = list('bgrkymc')
+
         rates.plot(
             kind='bar',
             color=colors,
         )
+
+        output_plot = os.path.join(output_path, title + '.jpg')
+        plt.savefig(output_plot)
         plt.show()
 
+    def add_labels(self, x, y, percent = False):
+        for i in range(len(x)):
+            if percent:
+                plt.text(i, y[i], str(y[i]) + "%", ha='center', fontweight='bold')
+            else:
+                plt.text(i, y[i], str(y[i]), ha='center', fontweight = 'bold')
+
+    def tdf_shmoo_graph(self):
+        print('tdf')
 
 def main():
     chip_version = 'Waipio'
@@ -106,7 +157,8 @@ def main():
     run = "dft_run_2021-07-01"
     output_dir = r"C:\Users\rpenmatc\OneDrive - Qualcomm\Desktop\post_test"
     post = PostProcess()
-    post.dlog_csv_post_process(base_dir, run, output_dir)
+    output_file = post.dlog_csv_post_process(base_dir, run, output_dir)
+    post.passing_rate_graph(output_file)
 
 
 if __name__ == "__main__":
