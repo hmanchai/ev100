@@ -1,6 +1,5 @@
 import os
 import time
-import create_folder_and_logger
 import ev100_vector_preprocessing_multi_threading
 import json
 import ev100_vector_conversion_waipio_std
@@ -17,7 +16,8 @@ class wrapper():
         self.py_log_path = py_log_path
         self.pattern_category = pattern_category
         self.vector_type = vector_type
-        self.logger = Logger.set_up_logger(py_log_path, py_log_name)
+        self.log_ob = Logger()
+        self.logger = self.log_ob.set_up_logger(py_log_path, py_log_name)
 
 
     def copy_stil_zip_files(self, dest, map_path, par_vector_path_r1):

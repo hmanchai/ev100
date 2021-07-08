@@ -8,6 +8,7 @@ import subprocess
 import time
 from datetime import timedelta
 from create_folder_and_logger import Logger
+from create_folder_and_logger import CreateFolder
 
 import pandas as pd
 from gevent import monkey
@@ -443,33 +444,36 @@ class Preprocess():
 # if __name__ == "__main__":
 #     main()
 
+def main():
+    updated_date_time = time.strftime("%Y%m%d-%H%M%S")
+    updated_date = time.strftime("%Y%m%d")
+    py_log_name = 'py_conversion_' + updated_date_time + '.log'
 
-updated_date_time = time.strftime("%Y%m%d-%H%M%S")
-updated_date = time.strftime("%Y%m%d")
-py_log_name = 'py_conversion_' + updated_date_time + '.log'
 
 
+    parser = argparse.ArgumentParser(description='Execute preprocessing script')
+    parser.add_argument('-rev', dest='rev', type=str,
+                        help='revision number ex. r1')
+    parser.add_argument('-chip_version', dest='chip_version', type=str,
+                        help='chip version type ex. waipio')
+    parser.add_argument('-pattern_category', dest='pattern_category', type=str,
+                        help='Enter the pattern category ( ex. SAF, INT, TDF')
+    parser.add_argument('-vector_type', dest='vector_type', type=str,
+                        help='Enter the vector type ex. PROD, EVAL')
+    parser.add_argument('-dest', dest='dest', type=str,
+                        help='destination  of base file path for files to by copied')
+    parser.add_argument('-map_path', dest='map_path', type=str, help='file path to vector mapping file')
 
-parser = argparse.ArgumentParser(description='Execute preprocessing script')
-parser.add_argument('-rev', dest='rev', type=str,
-                    help='revision number ex. r1')
-parser.add_argument('-chip_version', dest='chip_version', type=str,
-                    help='chip version type ex. waipio')
-parser.add_argument('-pattern_category', dest='pattern_category', type=str,
-                    help='Enter the pattern category ( ex. SAF, INT, TDF')
-parser.add_argument('-vector_type', dest='vector_type', type=str,
-                    help='Enter the vector type ex. PROD, EVAL')
-parser.add_argument('-dest', dest='dest', type=str,
-                    help='destination  of base file path for files to by copied')
-parser.add_argument('-map_path', dest='map_path', type=str, help='file path to vector mapping file')
+    args = parser.parse_args()
 
-args = parser.parse_args()
+    py_log_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\atpg_cdp" + "\\" + args.chip_version + "\\" + args.rev + r'\py_log'
+    par_vector_path_r1 = r'\\qctdfsrt\prj\qct\chips' + "\\" + args.chip_version + r'\sandiego\test\vcd' + "\\" + args.rev + r'_sec5lpe\tester_vcd'
 
-py_log_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\atpg_cdp" + "\\" + args.chip_version + "\\" + args.rev + r'\py_log'
-par_vector_path_r1 = r'\\qctdfsrt\prj\qct\chips' + "\\" + args.chip_version + r'\sandiego\test\vcd' + "\\" + args.rev + r'_sec5lpe\tester_vcd'
+    logger = Logger().set_up_logger(py_log_path, py_log_name)
 
-logger = Logger().set_up_logger(py_log_path, py_log_name)
+    preprocess = Preprocess(args.rev, args.chip_version, py_log_path, py_log_name, args.pattern_category, args.vector_type, updated_date_time, logger, args.dest,
+                                                                               args.map_path, par_vector_path_r1)
+    preprocess.store_all_zip_atpg()
 
-preprocess = Preprocess(args.rev, args.chip_version, py_log_path, py_log_name, args.pattern_category, args.vector_type, updated_date_time, logger, args.dest,
-                                                                           args.map_path, par_vector_path_r1)
-preprocess.store_all_zip_atpg()
+if __name__ == '__main__':
+    main()

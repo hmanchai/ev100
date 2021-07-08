@@ -1054,45 +1054,54 @@ class Conversion:
 
 # if __name__ == "__main__":
 #     main()
-updated_date_time = time.strftime("%Y%m%d-%H%M%S")
-updated_date = time.strftime("%Y%m%d")
-py_log_name = 'py_conversion_' + updated_date_time + '.log'
 
-parser = argparse.ArgumentParser(description='Execute preprocessing script')
 
-parser.add_argument('-rev', dest='rev', type=str,
-                    help='revision number ex. r1')
-parser.add_argument('-chip_version', dest='chip_version', type=str,
-                    help='chip version type ex. waipio')
-parser.add_argument('-pattern_category', dest='pattern_category', type=str,
-                    help='Enter the pattern category ( ex. SAF, INT, TDF')
-parser.add_argument('-vector_type', dest='vector_type', type=str,
-                    help='Enter the vector type ex. PROD, EVAL')
-parser.add_argument('-dest', dest='dest', type=str,
-                    help='destination  of base file path for files to by copied')
-parser.add_argument('-map_path', dest='map_path', type=str, help='file path to vector mapping file')
-parser.add_argument('-enable_del_zip', dest='enable_del_zip', action='store_true', default=False, help='enable deleting zip files True/False')
-parser.add_argument('-block', dest='block', type=str, help='Enter the block (separated by , ex. ATPG,TDF_ATPG_CPU)')
-parser.add_argument('-exclude_dirs', dest='exclude_dirs', type=str,
-                    help="Enter list of directories to exclude (separated by ,)")
 
-args = parser.parse_args()
 
-py_log_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\atpg_cdp" + "\\" + args.chip_version + "\\" + args.rev + r'\py_log'
-velocity_dft_cfg_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\c_weicya\ev100\seed_files\velocity_cfg" + "\\" + args.chip_version + "\\" + args.chip_version + "_WY_dft_universal_v1.cfg"
-patch_timesets_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\c_weicya\ev100\seed_files\patch_files\waipio\patch_timesets.txt"
-patch_timesets_50mhz_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\c_weicya\ev100\seed_files\patch_files\lahaina\patch_timesets_50MHz.txt"
+def main():
+    updated_date_time = time.strftime("%Y%m%d-%H%M%S")
+    updated_date = time.strftime("%Y%m%d")
+    py_log_name = 'py_conversion_' + updated_date_time + '.log'
 
-list_dirs_exclude = args.exclude_dirs.split(",")
-log_name = 'conversion_log_' + args.pattern_category + "_" + args.vector_type + "_" + updated_date_time
+    parser = argparse.ArgumentParser(description='Execute preprocessing script')
 
-conversion_log_csv_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\atpg_cdp" + "\\" + args.chip_version + "\\" + args.rev + r"\conversion_log"
-logger = Logger().set_up_logger(py_log_path, py_log_name)
+    parser.add_argument('-rev', dest='rev', type=str,
+                        help='revision number ex. r1')
+    parser.add_argument('-chip_version', dest='chip_version', type=str,
+                        help='chip version type ex. waipio')
+    parser.add_argument('-pattern_category', dest='pattern_category', type=str,
+                        help='Enter the pattern category ( ex. SAF, INT, TDF')
+    parser.add_argument('-vector_type', dest='vector_type', type=str,
+                        help='Enter the vector type ex. PROD, EVAL')
+    parser.add_argument('-dest', dest='dest', type=str,
+                        help='destination  of base file path for files to by copied')
+    parser.add_argument('-map_path', dest='map_path', type=str, help='file path to vector mapping file')
+    parser.add_argument('-enable_del_zip', dest='enable_del_zip', action='store_true', default=False, help='enable deleting zip files True/False')
+    parser.add_argument('-block', dest='block', type=str, help='Enter the block (separated by , ex. ATPG,TDF_ATPG_CPU)')
+    parser.add_argument('-exclude_dirs', dest='exclude_dirs', type=str,
+                        help="Enter list of directories to exclude (separated by ,)")
 
-preprocess_convert = Conversion(args.rev, args.chip_version, py_log_path, py_log_name, args.pattern_category, args.vector_type,
-                 updated_date_time, logger, conversion_log_csv_path, args.dest, args.block, log_name, velocity_dft_cfg_path,
-                 patch_timesets_path, patch_timesets_50mhz_path, args.map_path, args.enable_del_zip)
+    args = parser.parse_args()
 
-path = os.path.join(args.dest, args.chip_version, args.rev, args.block, args.pattern_category, args.vector_type)
+    py_log_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\atpg_cdp" + "\\" + args.chip_version + "\\" + args.rev + r'\py_log'
+    velocity_dft_cfg_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\c_weicya\ev100\seed_files\velocity_cfg" + "\\" + args.chip_version + "\\" + args.chip_version + "_WY_dft_universal_v1.cfg"
+    patch_timesets_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\c_weicya\ev100\seed_files\patch_files\waipio\patch_timesets.txt"
+    patch_timesets_50mhz_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\c_weicya\ev100\seed_files\patch_files\lahaina\patch_timesets_50MHz.txt"
 
-preprocess_convert.traverse_levels(path, args.pattern_category, args.vector_type, log_name, args.enable_del_zip, list_dirs_exclude)
+    list_dirs_exclude = args.exclude_dirs.split(",")
+    log_name = 'conversion_log_' + args.pattern_category + "_" + args.vector_type + "_" + updated_date_time
+
+    conversion_log_csv_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\atpg_cdp" + "\\" + args.chip_version + "\\" + args.rev + r"\conversion_log"
+    logger = Logger().set_up_logger(py_log_path, py_log_name)
+
+    preprocess_convert = Conversion(args.rev, args.chip_version, py_log_path, py_log_name, args.pattern_category, args.vector_type,
+                     updated_date_time, logger, conversion_log_csv_path, args.dest, args.block, log_name, velocity_dft_cfg_path,
+                     patch_timesets_path, patch_timesets_50mhz_path, args.map_path, args.enable_del_zip)
+
+    path = os.path.join(args.dest, args.chip_version, args.rev, args.block, args.pattern_category, args.vector_type)
+
+    preprocess_convert.traverse_levels(path, args.pattern_category, args.vector_type, log_name, args.enable_del_zip, list_dirs_exclude)
+
+
+if __name__ == '__main__':
+    main()

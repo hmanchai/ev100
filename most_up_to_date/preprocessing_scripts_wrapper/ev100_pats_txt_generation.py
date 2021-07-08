@@ -235,46 +235,52 @@ class Generate_Pats():
             f.write(header + '\n')
         return pats_txt
 
-updated_date_time = time.strftime("%Y%m%d-%H%M%S")
-updated_date = time.strftime("%Y%m%d")
-py_log_name = 'py_conversion_' + updated_date_time + '.log'
 
-parser = argparse.ArgumentParser(description='Execute GeneratePats script')
+def main():
+    updated_date_time = time.strftime("%Y%m%d-%H%M%S")
+    updated_date = time.strftime("%Y%m%d")
+    py_log_name = 'py_conversion_' + updated_date_time + '.log'
 
-parser.add_argument('-rev', dest='rev', type=str,
-                    help='revision number ex. r1')
-parser.add_argument('-chip_version', dest='chip_version', type=str,
-                    help='chip version type ex. waipio')
-parser.add_argument('-pattern_category', dest='pattern_category', type=str,
-                    help='Enter the pattern category ( ex. SAF, INT, TDF')
-parser.add_argument('-vector_type', dest='vector_type', type=str,
-                    help='Enter the vector type ex. PROD, EVAL')
-parser.add_argument('-dest', dest='dest', type=str,
-                    help='destination  of base file path for files to by copied')
-parser.add_argument('-map_path', dest='map_path', type=str, help='file path to vector mapping file')
-parser.add_argument('-block', dest='block', type=str,
-                    help='Enter the block (ex. TDF_ATPG_CPU)')
-parser.add_argument('-lim', dest='lim', type=int, help='Enter lim for # of patterns in each PATS.txt #')
-parser.add_argument('-pin_group', dest='pin_group', type=str, help="Enter pin group (ex. IN, OUT, or ALL_PINS)")
-parser.add_argument('-freq_mode_list', dest='freq_mode_list', type=str,
-                    help="Enter the frequency modes (separated by , ex. SVS,NOM,TUR)")
-parser.add_argument('-enable_cyc_cnt', dest='enable_cyc_cnt', type=int, help="Enter 1 or 0 to set enable cycle count")
-parser.add_argument('-exclude_dirs', dest='exclude_dirs', type=str,
-                    help="Enter list of directories to exclude (separated by ,)")
-args = parser.parse_args()
-freq_modes = args.freq_mode_list.split(",")
-list_dirs_exclude = args.exclude_dirs.split(",")
+    parser = argparse.ArgumentParser(description='Execute GeneratePats script')
 
-py_log_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\atpg_cdp" + "\\" + args.chip_version + "\\" + args.rev + r'\py_log'
+    parser.add_argument('-rev', dest='rev', type=str,
+                        help='revision number ex. r1')
+    parser.add_argument('-chip_version', dest='chip_version', type=str,
+                        help='chip version type ex. waipio')
+    parser.add_argument('-pattern_category', dest='pattern_category', type=str,
+                        help='Enter the pattern category ( ex. SAF, INT, TDF')
+    parser.add_argument('-vector_type', dest='vector_type', type=str,
+                        help='Enter the vector type ex. PROD, EVAL')
+    parser.add_argument('-dest', dest='dest', type=str,
+                        help='destination  of base file path for files to by copied')
+    parser.add_argument('-map_path', dest='map_path', type=str, help='file path to vector mapping file')
+    parser.add_argument('-block', dest='block', type=str,
+                        help='Enter the block (ex. TDF_ATPG_CPU)')
+    parser.add_argument('-lim', dest='lim', type=int, help='Enter lim for # of patterns in each PATS.txt #')
+    parser.add_argument('-pin_group', dest='pin_group', type=str, help="Enter pin group (ex. IN, OUT, or ALL_PINS)")
+    parser.add_argument('-freq_mode_list', dest='freq_mode_list', type=str,
+                        help="Enter the frequency modes (separated by , ex. SVS,NOM,TUR)")
+    parser.add_argument('-enable_cyc_cnt', dest='enable_cyc_cnt', type=int, help="Enter 1 or 0 to set enable cycle count")
+    parser.add_argument('-exclude_dirs', dest='exclude_dirs', type=str,
+                        help="Enter list of directories to exclude (separated by ,)")
+    args = parser.parse_args()
+    freq_modes = args.freq_mode_list.split(",")
+    list_dirs_exclude = args.exclude_dirs.split(",")
 
-log_name = 'conversion_log_' + args.pattern_category + "_" + args.vector_type + "_" + updated_date
+    py_log_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\atpg_cdp" + "\\" + args.chip_version + "\\" + args.rev + r'\py_log'
 
-conversion_log_csv_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\atpg_cdp" + "\\" + args.chip_version + "\\" + args.rev + r"\conversion_log"
+    log_name = 'conversion_log_' + args.pattern_category + "_" + args.vector_type + "_" + updated_date
 
-logger = Logger().set_up_logger(py_log_path, py_log_name)
-dir_exec = os.path.join(args.dest, 'pattern_execution', 'pattern_list')
+    conversion_log_csv_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\atpg_cdp" + "\\" + args.chip_version + "\\" + args.rev + r"\conversion_log"
 
-preprocess_convert = Generate_Pats(conversion_log_csv_path, logger)
+    logger = Logger().set_up_logger(py_log_path, py_log_name)
+    dir_exec = os.path.join(args.dest, 'pattern_execution', 'pattern_list')
 
-preprocess_convert.generate_pats_txt(args.pattern_category, args.vector_type, args.dest, dir_exec, log_name, args.lim, list_dirs_exclude,
-                          args.pin_group, args.enable_cyc_cnt, args.block, freq_modes)
+    preprocess_convert = Generate_Pats(conversion_log_csv_path, logger)
+
+    preprocess_convert.generate_pats_txt(args.pattern_category, args.vector_type, args.dest, dir_exec, log_name, args.lim, list_dirs_exclude,
+                              args.pin_group, args.enable_cyc_cnt, args.block, freq_modes)
+
+
+if __name__ == '__main__':
+    main()

@@ -27,7 +27,7 @@ class PostProcess():
             returns output file of csv (file path used in graph generation)
         """
         # csv_path = os.path.join(dlog_dir, '*.csv')
-        dlog_dir = os.path.join(base_dir, 'pattern_execution', 'execution_dlog', run, 'dlog')
+        dlog_dir = os.path.join(base_dir, 'pattern_execution (1)', 'execution_dlog', run, 'dlog')
         pattern_names = collections.OrderedDict()
         pattern_index = 0
 
@@ -69,6 +69,10 @@ class PostProcess():
         regex = "(tk_atpg_)(.*)"
         df_data["DFT Type"] = df_data.apply(lambda x: re.search(regex, x["Pattern Name"]).group(2).split("_")[0].upper(),
                                             axis=1)
+        df_data["freq mode"] = df_data.apply(lambda x: freq_mode, axis=1)
+        print(sn_df.notnull().sum(axis=1))
+        df_data["# failing"] = sn_df.notnull().sum(axis=1)
+        df_data["# failing"].fillna("0", inplace = True)
         df_data = pd.concat([df_data, sn_df], axis = 1)
         df_data.pop('Index')
         output_file = os.path.join(output_dir, freq_mode + "_postprocess_failures.csv")
@@ -144,26 +148,109 @@ class PostProcess():
         output_plot = os.path.join(output_path, title + '.jpg')
         plt.savefig(output_plot)
 
+    def all_data_compiled(self, output_dir):
+        paths = glob.glob(output_dir + '\*\*\*.csv')
+        passing_rate = {"INT": [], "SAF": [], "TDF": []}
+        freq_modes = []
+        for output_path in paths:
+            df_data = pd.read_csv(output_path)
+            output_path = re.search("(.*)(\\\)(.*)$", output_path).group(1)
+            freq_mode = re.search("(.*)(\\\)(.*)(\\\)(.*)$", output_path).group(3)
+            run = re.search("(.*)(\\\)(.*)$", output_path).group(3)
+            for dft_type in passing_rate.keys():
+                pass_fail = {"pass": "", "fail": ""}
+                total_chips = 0
+                passing = 0
+                df_vector_type = df_data[df_data['DFT Type'].str.match(dft_type.upper())]
 
-    def add_labels(self, x, y, percent = False):
-        for i in range(len(x)):
-            if percent:
-                plt.text(i, y[i], str(round(y[i], 2)) + "%", ha='center', fontweight='bold')
-            else:
-                plt.text(i, y[i], str(round(y[i], 2)), ha='center', fontweight = 'bold')
+                df_vector_type.pop('Pattern Name')
+                df_vector_type.pop('DFT Type')
+                df_vector_type.pop('freq mode')
+                df_vector_type.pop('# failing')
+                for col in df_vector_type:
+                    total_chips += 1
+                    if df_vector_type[col].isnull().sum() == df_vector_type.shape[0]:
+                        passing += 1
+                pass_fail["pass"] = passing
+                pass_fail["fail"] = total_chips - passing
+                title = freq_mode + " " + dft_type + " Pass or Fail"
+                # plt.title(title)
+                # plt.ylabel("# of Chips")
+                # self.add_labels(list(pass_fail.keys()), list(pass_fail.values()))
+                # rates = pd.Series(pass_fail)
+                # colors = list('bgrkymc')
+                #
+                # rates.plot(
+                #     kind='bar',
+                #     color=colors,
+                # )
+                # output_plot = os.path.join(output_path, title + '.jpg')
+                # plt.savefig(output_plot)
+
+                if df_vector_type.shape[0] != 0:
+                    rate_list = passing_rate.get(dft_type)
+                    rate_list.append((passing / float(total_chips)) * 100)
+                    passing_rate[dft_type] = rate_list
+                    print(passing_rate)
+                else:
+                    rate_list = passing_rate.get(dft_type)
+                    rate_list.append(0.0)
+                    passing_rate[dft_type] = rate_list
+                    print(passing_rate)
+                if freq_mode not in freq_modes:
+                    freq_modes.append(freq_mode)
+        title = "_".join(freq_modes) + " " + " Passing Percentage"
+        plt.title(title)
+
+        X_axis = np.arange(len(freq_modes))
+        plt.bar(X_axis - 0.2 , list(passing_rate.values())[0], 0.2, label="INT")
+        plt.bar(X_axis, list(passing_rate.values())[1], 0.2, label="SAF")
+        plt.bar(X_axis + 0.2, list(passing_rate.values())[2], 0.2, label="TDF")
+        plt.xticks(X_axis, freq_modes)
+        plt.xlabel('Pattern Category')
+        plt.ylabel('Percentage Passing (%)')
+        plt.legend()
+        spacing = [-.2, .8]
+        self.add_labels(list(passing_rate.values()), spacing, True)
+
+        plt.ylim(0, 100)
+        # rates = pd.Series(passing_rate)
+        # colors = list('bgrkymc')
+        #
+        # rates.plot(
+        #     kind='bar',
+        #     color=colors,
+        # )
+
+        output_plot = os.path.join(output_dir, title + '.jpg')
+        plt.savefig(output_plot)
+
+    def add_labels(self, data, pos, percent = False):
+        for value in data:
+            for i in range(len(value)):
+                if percent:
+                    plt.text(pos[i], value[i], str(round(value[i], 2)) + "%", ha='center', fontweight='bold')
+                else:
+                    plt.text(pos[i], value[i], str(round(value[i], 2)), ha='center', fontweight = 'bold')
+                pos[i] = pos[i] + .2
+                print(pos[i])
+                print(value[i])
 
     def tdf_shmoo_graph(self):
         print('tdf')
 
 def main():
     chip_version = 'Waipio'
-    base_dir = r"G:\ATPG_CDP"
+    # base_dir = r"G:\ATPG_CDP"
+    # run = "dft_run_2021-07-07"
+    # output_dir = r"G:\ATPG_CDP\pattern_execution\output"
+    base_dir = r"C:\Users\rpenmatc\OneDrive - Qualcomm\Desktop"
     run = "dft_run_2021-07-07"
-    output_dir = r"G:\ATPG_CDP\pattern_execution\output"
+    output_dir = r"C:\Users\rpenmatc\OneDrive - Qualcomm\Desktop\pattern_execution\output"
     post = PostProcess()
-    output_file = post.dlog_csv_post_process(base_dir, run, output_dir)
-    post.passing_rate_graph(output_file)
-
+    #output_file = post.dlog_csv_post_process(base_dir, run, output_dir)
+   # post.passing_rate_graph(output_file)
+    post.all_data_compiled(output_dir)
 
 if __name__ == "__main__":
     main()
