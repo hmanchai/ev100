@@ -290,9 +290,9 @@ class PostProcess():
         for value in data:
             for i in range(len(value)):
                 if percent:
-                    plt.text(pos[i], value[i], str(round(value[i], 2)) + "%", ha='center', fontweight='bold', fontsize = "small")
+                    plt.text(pos[i], value[i], str(round(value[i], 2)) + "%", ha='center', fontweight='bold', fontsize = "xx-small")
                 else:
-                    plt.text(pos[i], value[i], str(round(value[i], 2)), ha='center', fontweight = 'bold', fontsize = "small")
+                    plt.text(pos[i], value[i], str(round(value[i], 2)), ha='center', fontweight = 'bold', fontsize = "xx-small")
                 pos[i] = pos[i] + .2
 
 
@@ -301,12 +301,12 @@ class PostProcess():
 
 def main():
     chip_version = 'Waipio'
-    # base_dir = r"G:\ATPG_CDP"
-    # run = "dft_run_2021-07-07"
-    # output_dir = r"G:\ATPG_CDP\pattern_execution\output"
-    base_dir = r"C:\Users\rpenmatc\OneDrive - Qualcomm\Desktop"
-    runs = ["dft_run_2021-07-01"]
-    output_dir = r"C:\Users\rpenmatc\OneDrive - Qualcomm\Desktop\pattern_execution\output"
+    base_dir = r"G:\ATPG_CDP"
+    runs = ["dft_run_2021-07-06", "dft_run_2021-07-07","dft_run_2021-07-08"]
+    output_dir = r"G:\ATPG_CDP\pattern_execution\output_new"
+    # base_dir = r"C:\Users\rpenmatc\OneDrive - Qualcomm\Desktop"
+    # runs = ["dft_run_2021-07-01"]
+    # output_dir = r"C:\Users\rpenmatc\OneDrive - Qualcomm\Desktop\pattern_execution\output"
     post = PostProcess()
     post.dlog_csv_post_process(base_dir, runs, output_dir)
    # post.passing_rate_graph(output_file)
