@@ -87,8 +87,9 @@ class PostProcess():
                 df_data.to_csv(output_file, index=False, sep=',', header=False, mode='a')
             else:
                 df_data.to_csv(output_file, index=False, sep=',', header=True, mode='w')
-
-
+        final = pd.read_csv(output_file)
+        final = final.drop_duplicates(subset=['Pattern Name'], keep='first')
+        final.to_csv(output_file, index=False, sep=',', header=True, mode='w')
 
     def create_folder(self, dir):
         """
