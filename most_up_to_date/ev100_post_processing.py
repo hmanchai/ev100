@@ -15,7 +15,7 @@ class PostProcess():
     class to hold all post processing scripts
     generates graphs and csv files
     """
-    def dlog_csv_post_process(self, base_dir, runs, output_dir):
+    def dlog_csv_post_process(self, base_dir, runs, output_dir, exclude_chips):
         """
         process individual dlog csv's to generate a summary test log csv
         :param base_dir: str
@@ -45,11 +45,12 @@ class PostProcess():
             self.create_folder(output_dir)
 
             for d in os.listdir(dlog_dir):
-                sn_dir = os.path.join(dlog_dir, d)
-                csv_path = sn_dir + '\\' + '*.csv'
-                list_all_csv = glob.glob(csv_path)
-                sn_files[d] = list_all_csv
-                sn_list.append(d)
+                if d not in exclude_chips:
+                    sn_dir = os.path.join(dlog_dir, d)
+                    csv_path = sn_dir + '\\' + '*.csv'
+                    list_all_csv = glob.glob(csv_path)
+                    sn_files[d] = list_all_csv
+                    sn_list.append(d)
             # csv_path = "E:\johnny\dlog_csv_debugging\int_and_saf.csv"
             sn_df = pd.DataFrame(columns=sn_list)
             for sn, paths in sn_files.items():
@@ -303,13 +304,13 @@ class PostProcess():
 def main():
     chip_version = 'Waipio'
     base_dir = r"G:\ATPG_CDP"
-    runs = ["dft_run_2021-07-06", "dft_run_2021-07-07","dft_run_2021-07-08"]
-    output_dir = r"G:\ATPG_CDP\pattern_execution\output_new"
+    runs = ["dft_run_2021-07-09"]
+    output_dir = r"G:\ATPG_CDP\pattern_execution\postprocessed\NOM_output"
     # base_dir = r"C:\Users\rpenmatc\OneDrive - Qualcomm\Desktop"
     # runs = ["dft_run_2021-07-01"]
     # output_dir = r"C:\Users\rpenmatc\OneDrive - Qualcomm\Desktop\pattern_execution\output"
     post = PostProcess()
-    post.dlog_csv_post_process(base_dir, runs, output_dir)
+    post.dlog_csv_post_process(base_dir, runs, output_dir, ["0x0x3C273C5"])
    # post.passing_rate_graph(output_file)
     #freq_modes = ["SVS", "NOM", "TUR", "SVSD1"]
     post.all_data_compiled(output_dir)

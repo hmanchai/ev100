@@ -3,6 +3,7 @@ import time
 import ev100_vector_preprocessing_multi_threading
 import json
 import ev100_vector_conversion_waipio_std
+import ev100_pats_txt_generation
 from create_folder_and_logger import Logger
 
 
@@ -58,7 +59,7 @@ class wrapper():
         dir_exec = os.path.join(dir_pat, 'pattern_execution', 'pattern_list')
         version_num = self.rev + "_sec5lpe"
         #dir_pat = os.path.join(dir_pat, self.chip_version, version_num)
-        preprocess = ev100_vector_preprocessing_multi_threading.Generate_Pats(conversion_log_csv_path, self.logger)
+        preprocess = ev100_pats_txt_generation.Generate_Pats(conversion_log_csv_path, self.logger)
         pattern_categories = self.pattern_category.split("|")
         for block in blocks:
             #dir_pat = os.path.join(dir_pat, block)

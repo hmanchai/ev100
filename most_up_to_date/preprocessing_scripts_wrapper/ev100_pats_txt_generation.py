@@ -5,6 +5,7 @@ import os
 import re
 import time
 from create_folder_and_logger import Logger
+from create_folder_and_logger import CreateFolder
 
 import pandas as pd
 
@@ -87,7 +88,7 @@ class Generate_Pats():
                 dir_sub = os.path.join(dir_exec, mode, pattern_category, vector_type)
                 pre_fix = 'PATS_' + pattern_category + '_' + vector_type + '_'
 
-            self.make_folder.createfolder(dir_sub)
+            self.make_folder.create_folder(dir_sub)
 
             do_files = self.total_do_files(df_conv_log, freq_modes, list_dirs_exclude_full, path_top_level, pattern_category, vector_type, block)
 
