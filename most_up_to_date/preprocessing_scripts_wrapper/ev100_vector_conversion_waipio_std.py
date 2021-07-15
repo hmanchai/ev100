@@ -13,8 +13,8 @@ from pathlib import Path
 
 import pandas as pd
 
-from create_folder_and_logger import CreateFolder
-from create_folder_and_logger import Logger
+from preprocess_init import CreateFolder
+from preprocess_init import Logger
 
 
 # from ev100_vector_preprocessing_lahaina import create_folder, load_filter_map

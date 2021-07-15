@@ -7,8 +7,8 @@ import re
 import subprocess
 import time
 from datetime import timedelta
-from create_folder_and_logger import Logger
-from create_folder_and_logger import CreateFolder
+from preprocess_init import Logger
+from preprocess_init import CreateFolder
 
 import pandas as pd
 from gevent import monkey

@@ -30,7 +30,7 @@ class PostProcess():
         """
         for run in runs:
             # csv_path = os.path.join(dlog_dir, '*.csv')
-            dlog_dir = os.path.join(base_dir, 'pattern_execution', 'execution_dlog', run, 'dlog')
+            dlog_dir = os.path.join(base_dir, "pattern_execution", "execution_dlog", run, 'dlog')
             pattern_names = collections.OrderedDict()
             pattern_index = 0
 
@@ -304,8 +304,8 @@ class PostProcess():
 def main():
     chip_version = 'Waipio'
     base_dir = r"G:\ATPG_CDP"
-    runs = ["dft_run_2021-07-09"]
-    output_dir = r"G:\ATPG_CDP\pattern_execution\postprocessed\NOM_output"
+    runs = ["dft_run_2021-07-06", "dft_run_2021-07-07","dft_run_2021-07-08"]
+    output_dir = r"G:\ATPG_CDP\pattern_execution\output_new"
     # base_dir = r"C:\Users\rpenmatc\OneDrive - Qualcomm\Desktop"
     # runs = ["dft_run_2021-07-01"]
     # output_dir = r"C:\Users\rpenmatc\OneDrive - Qualcomm\Desktop\pattern_execution\output"
