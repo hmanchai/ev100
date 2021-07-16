@@ -1,23 +1,30 @@
-import os
-import time
-import ev100_vector_preprocessing_multi_threading
 import json
-import ev100_vector_conversion_waipio_std
-import ev100_pats_txt_generation
-from preprocess_init import Logger
 import preprocessing_conversion_wrapper
 
 
-
 class GenerateJson():
-
-
+    """
+    Automatically generate json file based on user input or defaults, this configuration file is used to assign variables in preprocessing wrapper
+    Allows complete from from copying stil -> conversion -> pats.txt generation (or any subset) based on json file values
+    Allows for persistent storage of run inputs and will give option to update logs (py and conversion) to make sure they don't overwrite
+    """
     def generate_json_file(self, input_dic, updated_date, updated_date_time):
+        """
+        Creates json file based on dictionary that holds all variable inputs
+        :param input_dic: dictionary that will be converted to json file
+        :type input_dic: str key : name of variable to be assigned, str/int/list value: value to be assigned to key variable
+        :param updated_date: updated date is used in naming convention
+        :type updated_date: str
+        :param updated_date_time: updated date is used to make sure all naming conventions for files are unique (not overwritten)
+        :type updated_date_time: str
+        :return: wrapper object
+        """
         global chip_version, convert_velocity, copy_zip, dest, generate_pats, pattern_category, py_log_name, py_log_path, rev, vector_type, par_vector_path_r1, map_path, enable_del_zip, patch_timesets_50mhz_path, patch_timesets_path, velocity_dft_cfg_path, blocks, conversion_log_csv_path, log_name, enable_cyc_cnt, freq_modes, lim, list_dirs_exclude, pin_group
         chip_version, convert_velocity, copy_zip, dest, generate_pats, pattern_category, py_log_name, py_log_path, rev, vector_type = self.input_to_run(
             input_dic, updated_date_time)
-        preprocess_convert = preprocessing_conversion_wrapper.wrapper(rev, chip_version, py_log_path, py_log_name, pattern_category, vector_type,
-                                     updated_date_time)
+        preprocess_convert = preprocessing_conversion_wrapper.wrapper(rev, chip_version, py_log_path, py_log_name,
+                                                                      pattern_category, vector_type,
+                                                                      updated_date_time)
         ## to run copy zip STIL files
         if copy_zip.lower() == 'y':
             par_vector_path_r1 = self.needed_for_zip(chip_version, input_dic, rev)
@@ -31,9 +38,9 @@ class GenerateJson():
         # to run conversion velocity and PATS.txt generation
         if convert_velocity == 'y' or generate_pats == 'y':
             blocks, conversion_log_csv_path, log_name = self.needed_conversion_pats(chip_version,
-                                                                               input_dic, pattern_category, rev,
-                                                                               updated_date,
-                                                                               vector_type)
+                                                                                    input_dic, pattern_category, rev,
+                                                                                    updated_date,
+                                                                                    vector_type)
         if generate_pats == 'y':
             enable_cyc_cnt, freq_modes, lim, list_dirs_exclude, pin_group = self.needed_pats(input_dic)
         json_filename = str(input(
@@ -42,8 +49,14 @@ class GenerateJson():
             json.dump(input_dic, outfile, indent=2)
         return preprocess_convert
 
-
     def needed_pats(self, input_dic):
+        """
+        input variables needed ONLY for pats.txt generation
+        :param input_dic: dictionary that will be converted to json file
+        :type input_dic: str key : name of variable to be assigned, str/int/list value: value to be assigned to key variable
+        :return: enable_cyc_cnt, freq_modes, lim, list_dirs_exclude, pin_group
+        all variables needed only of pats.txt
+        """
         lim = int(input("Enter lim for # of patterns in each PATS.txt #: \n # ENTER NO INPUT - DEFAULT \"1\"\n ") or 1)
         input_dic['lim'] = lim
 
@@ -67,9 +80,24 @@ class GenerateJson():
         input_dic['list_dirs_exclude'] = list_dirs_exclude
         return enable_cyc_cnt, freq_modes, lim, list_dirs_exclude, pin_group
 
-
     def needed_conversion_pats(self, chip_version, input_dic, pattern_category, rev,
                                updated_date, vector_type):
+        """
+        Set variables needed for both conversion and pats.txt generation methods
+        :param chip_version: used for naming conventions to automatically set some variables ex waipio
+        :type chip_version: str
+        :param input_dic: dictionary that will be converted to json file
+        :type input_dic: str key : name of variable to be assigned, str/int/list value: value to be assigned to key variable
+        :param pattern_category: used for naming conventions to automatically set some variables
+        :type pattern_category: str
+        :param rev: used for naming conventions to automatically set some variables
+        :type rev: str
+        :param updated_date: used for naming conventions to automatically set some variables
+        :type updated_date: str
+        :param vector_type: used for naming conventions to automatically set some variables
+        :type vector_type:str
+        :return: blocks, conversion_log_csv_path, log_name: input values needed for both conversion and pats generation
+        """
         blocks_str = str(input(
             "Enter the blocks (separated by | ex. ATPG|TDF_ATPG_CPU): \n # ENTER NO INPUT - DEFAULT \"ATPG\"\n ") or r"ATPG")
         # make list based on dest
@@ -87,8 +115,13 @@ class GenerateJson():
         input_dic['conversion_log_csv_path'] = conversion_log_csv_path
         return blocks, conversion_log_csv_path, log_name
 
-
     def needed_conversion(self, input_dic):
+        """
+        Set variables needed for ONLY conversion
+        :param input_dic: dictionary that will be converted to json file
+        :type input_dic: str key : name of variable to be assigned, str/int/list value: value to be assigned to key variable
+        :return: enable_del_zip, patch_timesets_50mhz_path, patch_timesets_path, velocity_dft_cfg_path: variables set needed for conversion
+        """
         # velocity_dft_cfg_path = str(input(
         #     "Enter velocity configuration file path: \n # ENTER NO INPUT - DEFAULT \"" +
         #     r"\\qctdfsrt\prj\vlsi\vetch_pst\c_weicya\ev100\seed_files\velocity_cfg\waipio\waipio_WY_dft_universal_v1.cfg" + "\"\n ")
@@ -122,8 +155,13 @@ class GenerateJson():
         input_dic['enable_del_zip'] = enable_del_zip
         return enable_del_zip, patch_timesets_50mhz_path, patch_timesets_path, velocity_dft_cfg_path
 
-
     def needed_zip_conversion(self, input_dic):
+        """
+        Variable input needed for both zip and conversion
+        :param input_dic: dictionary that will be converted to json file
+        :type input_dic: str key : name of variable to be assigned, str/int/list value: value to be assigned to key variable
+        :return: map_path: str variables set needed for conversion
+        """
         map_path = str(input(
             "Enter vector mapping file path: \n # ENTER NO INPUT - DEFAULT \"" + r"C:\Users\rpenmatc\OneDrive - Qualcomm\Desktop\Automation csv\demo_int_saf.csv" + "\"\n ")
                        or r"C:\Users\rpenmatc\OneDrive - Qualcomm\Desktop\Automation csv\demo_int_saf.csv")
@@ -131,17 +169,34 @@ class GenerateJson():
         # map_path = r"C:\Users\rpenmatc\OneDrive - Qualcomm\Desktop\Automation csv\demo_int_saf.csv"
         return map_path
 
-
     def needed_for_zip(self, chip_version, input_dic, rev):
+        """
+        Set variables needed for both conversion and pats.txt generation methods
+        :param chip_version: used for naming conventions to automatically set some variables ex waipio
+        :type chip_version: str
+        :param input_dic: dictionary that will be converted to json file
+        :type input_dic: str key : name of variable to be assigned, str/int/list value: value to be assigned to key variable
+        :param rev: used for naming conventions to automatically set some variables
+        :type rev: str
+        :return: par_vector_path_r1 variable that holds path containing STIL files to be copied
+        """
         # par_vector_path_r1 = str(input("Enter the STIL file resource folder: \n # ENTER NO INPUT - DEFAULT \"" +
         #                                r'\\qctdfsrt\prj\qct\chips' + "\\" + chip_version + r'\sandiego\test\vcd' + "\\" + rev + r'_sec5lpe\tester_vcd' + "\"\n ") or
         #                          r'\\qctdfsrt\prj\qct\chips' + "\\" + chip_version + r'\sandiego\test\vcd' + "\\" + rev + r'_sec5lpe\tester_vcd')
-        par_vector_path_r1 =  r'\\qctdfsrt\prj\qct\chips' + "\\" + chip_version + r'\sandiego\test\vcd' + "\\" + rev + r'_sec5lpe\tester_vcd'
+        par_vector_path_r1 = r'\\qctdfsrt\prj\qct\chips' + "\\" + chip_version + r'\sandiego\test\vcd' + "\\" + rev + r'_sec5lpe\tester_vcd'
         input_dic['par_vector_path_r1'] = par_vector_path_r1
         return par_vector_path_r1
 
-
     def input_to_run(self, input_dic, updated_date_time):
+        """
+        Sets initial variable inputs needed for all preprocessing scripts
+        :param input_dic: dictionary that will be converted to json file
+        :type input_dic: str key : name of variable to be assigned, str/int/list value: value to be assigned to key variable
+        :param updated_date_time: updated date is used to make sure all naming conventions for files are unique (not overwritten)
+        :type updated_date_time: str
+        :return: chip_version, convert_velocity, copy_zip, dest, generate_pats, pattern_category, py_log_name, py_log_path, rev, vector_type:
+        variables needed for any/all preprocessing scripts
+        """
         rev = str(input("Enter the rev #: \n # ENTER NO INPUT - DEFAULT \"r1\"\n ") or "r1")
         input_dic['rev'] = rev
         chip_version = str(input("Enter the chip version: \n # ENTER NO INPUT - DEFAULT \"waipio\"\n ") or "waipio")

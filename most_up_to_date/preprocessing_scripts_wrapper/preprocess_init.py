@@ -1,8 +1,20 @@
 import logging
 import os
 
-class Logger():
+
+class Logger:
+    """
+    class to set up logger to be used throughout preprocessing flow
+    """
     def set_up_logger(self, py_log_path, py_log_name):
+        """
+        sets up logger
+        :param py_log_path: path for log output
+        :type py_log_path: str
+        :param py_log_name: file name of log output
+        :type py_log_name: str
+        :return: logger: to be used throughout preprocessing flow
+        """
         # set up logger
         logger = logging.getLogger(__name__)
         logger.setLevel(logging.DEBUG)
@@ -24,10 +36,12 @@ class Logger():
         logger.addHandler(stream_handler)
         return logger
 
+
 class CreateFolder():
     """
     class to create a new folder given a filepath
     """
+
     def create_folder(self, dir):
         """
         Create the directory if not exists.

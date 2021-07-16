@@ -238,6 +238,10 @@ class Generate_Pats():
 
 
 def main():
+    """
+    main method allows for arguments to be directly added through command line
+    Generates pats.txt files in respective folders
+    """
     updated_date_time = time.strftime("%Y%m%d-%H%M%S")
     updated_date = time.strftime("%Y%m%d")
     py_log_name = 'py_conversion_' + updated_date_time + '.log'
