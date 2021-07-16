@@ -10,6 +10,7 @@ from preprocess_init import CreateFolder
 import pandas as pd
 
 class Generate_Pats():
+    # TODO: create option to automatically check svm and lvm KB/MB size limit to fit maximum patterns in pats.txt
     """
     Class generates PATS.txt files separated out into folders labeled with sequential numbers
     Filepath dest + \pattern_execution\pattern_list\<freq_mode>\<pattern_type>\<vector_type>\<#>
