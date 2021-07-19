@@ -8,6 +8,10 @@ import pandas as pd
 import fnmatch
 import matplotlib.pyplot as plt
 import copy
+import seaborn as sns
+from matplotlib import image
+from matplotlib.colors import LinearSegmentedColormap
+import dataframe_image as dfi
 
 
 class PostProcess():
@@ -169,6 +173,7 @@ class PostProcess():
     #     output_plot = os.path.join(output_path, title + '.jpg')
     #     plt.savefig(output_plot)
 
+
     def all_data_compiled(self, output_dir):
         """
         Based on summary csv data, generates summary tables and graphs to depict different passing rate statistics for
@@ -319,11 +324,22 @@ class PostProcess():
                              fontsize="xx-small")
                 pos[i] = pos[i] + .2
 
-    def tdf_shmoo_graph(self):
+    def tdf_shmoo_graph(self, shmoo_data):
         """
         Create color graded graph to represent passing chips at various freq and volt combinations (shmoo table)
         """
-        print('tdf')
+        df = pd.read_csv(shmoo_data)
+        pivot = df.pivot_table(index=['MHz'], columns=['Freq Mode','Voltage'], values=['Status'], aggfunc=np.sum)
+
+        cm = LinearSegmentedColormap.from_list(
+            name='test',
+            colors=['red', 'white', 'green']
+        )
+        df_styled = pivot.style.background_gradient(cmap=cm)
+        fig, ax = plt.subplots(figsize=(10, 10))
+        sns.heatmap(pivot,annot=True, cmap=cm, ax=ax)
+        plt.show()
+
 
 
 def main():
@@ -338,10 +354,10 @@ def main():
     # runs = ["dft_run_2021-07-01"]
     # output_dir = r"C:\Users\rpenmatc\OneDrive - Qualcomm\Desktop\pattern_execution\output"
     post = PostProcess()
-    post.dlog_csv_post_process(base_dir, runs, output_dir, ["0x0x3C273C5"])
-    # post.passing_rate_graph(output_file)
-    # freq_modes = ["SVS", "NOM", "TUR", "SVSD1"]
-    post.all_data_compiled(output_dir)
+    #post.dlog_csv_post_process(base_dir, runs, output_dir, ["0x0x3C273C5"])
+
+    #post.all_data_compiled(output_dir)
+    post.tdf_shmoo_graph(r"C:\Users\rpenmatc\OneDrive - Qualcomm\Documents\tdf_csv.csv")
 
 
 if __name__ == "__main__":
