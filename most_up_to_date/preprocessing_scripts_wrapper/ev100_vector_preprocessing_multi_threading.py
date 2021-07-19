@@ -154,7 +154,7 @@ class Preprocess():
 
         self.setup_thread_pool(self.dest, df_file_loc)
 
-        dict_rev_cnt[self.rev] += res_hdr_cpy
+        dict_rev_cnt['r1'] += res_hdr_cpy
 
         # increment total count
         total_hdr_cnt += res_hdr_cpy
@@ -203,7 +203,7 @@ class Preprocess():
                 pl_path_to_copy = path_atpg_r1
 
             # folder_ordering = ['Block', 'Bin Si Revision', 'DFT type', 'Vector Type', 'Vector', 'freq mode']
-            comp_type, dir_path, name = self.create_file_path(dest_dir, payload, row)
+            comp_type, dir_path, name = self.create_file_path(dest_dir, payload, row, hdr)
             self.make_folder.create_folder(dir_path)
 
             start_inner = time.time()
@@ -323,7 +323,7 @@ class Preprocess():
             # res_pl_cpy += copy_payload(dict_rev_cnt, dir_path, zip)
         return df_file_loc
 
-    def create_file_path(self, dest_dir, payload, row):
+    def create_file_path(self, dest_dir, payload, row, header):
         """
         Parses through ['Block', 'Bin Si Revision', 'DFT type', 'Vector Type', 'Vector', 'freq mode'] information for each vector
         to determine unique filepath for destination of each header/payload group
@@ -342,17 +342,22 @@ class Preprocess():
                 if (row['DFT type'] == 'SAF'):
                     if re.search("(lpc_se0_|lpu_se0_)(.*)", payload):
                         name, split_name = self.find_value_after_regex(payload, "(lpc_se0_|lpu_se0_)(.*)")
+                        vector_name, split = self.find_value_after_regex(header, "(lpc_se0_|lpu_se0_)(.*)")
                         dir_path = os.path.join(dir_path, comp_type, 'se0')
                         if name == 'F32':
-                            dir_path = os.path.join(dir_path, name, split_name[1])
+                            dir_path = os.path.join(dir_path, name, vector_name)
                         else:
-                            if re.search("t$", payload):
-                                dir_path = os.path.join(dir_path, 'regular', 't', name)
+                            if re.search("_t$", payload):
+                                dir_path = os.path.join(dir_path, 'regular', 'topoff_t', vector_name)
+                            elif re.search("_t_ts$", payload):
+                                dir_path = os.path.join(dir_path, 'regular', 'topoff_t_ts', vector_name)
+                            elif re.search("(.*)(topoff)(.*)", payload):
+                                dir_path = os.path.join(dir_path, 'regular', 'topoff', vector_name)
                             else:
-                                dir_path = os.path.join(dir_path, 'regular', 'regular', name)
+                                dir_path = os.path.join(dir_path, 'regular', 'regular', vector_name)
                     else:
-                        name, split_name = self.find_value_after_regex(payload, "(lpc_|lpu_)(.*)")
-                        dir_path = os.path.join(dir_path, comp_type, 'regular', name)
+                        vector_name, split = self.find_value_after_regex(header, "(lpc_se0_|lpu_se0_)(.*)")
+                        dir_path = os.path.join(dir_path, comp_type, 'regular', vector_name)
                 else:
                     full_name = re.search("(lpc_|lpu_)(.*)", row[folder_name]).group(2)
                     name = re.split("_", full_name)[0]
