@@ -330,11 +330,26 @@ class PostProcess():
         columns = ['Freq Mode', 'Volts', "MHz", "Temp", "Passing"]
         # frames = [mvp_df, sub_df]
         # mvp_df = pd.concat(frames)
-        full_df = pd.DataFrame(columns, axis='columns')
-        for data in shmoo_data:
-            df = pd.read_csv(data, skiprows=5)
-            print(df)
-        pivot = df.pivot_table(columns=['MHz'], index=['Freq Mode','Voltage'], values=['Passing'], aggfunc=np.sum)
+        full_df = pd.DataFrame(columns=columns)
+
+        list_csv = glob.glob(shmoo_data + "\\*")
+        for data in list_csv:
+            with open(data) as fh:
+                i = 0
+                reader = csv.reader(fh, delimiter=",")
+                for row in reader:
+                    if i == 1:
+                        freq_mode = row[1]
+                        break
+                    i += 1
+            df = pd.read_csv(data, skiprows=5, header=None)
+            df.insert(0, "Freq Mode", freq_mode, True)
+            df = df.set_axis(columns, axis=1)
+            df["Passing"] = df.apply(lambda x: 1 if re.search("PASS", x["Passing"])
+            else 0, axis=1)
+            frames = [full_df, df]
+            full_df = pd.concat(frames)
+        pivot = full_df.pivot_table(columns=['MHz'], index=['Freq Mode','Volts'], values=['Passing'], aggfunc=np.sum)
 
         cm = LinearSegmentedColormap.from_list(
             name='test',
@@ -361,7 +376,7 @@ def main():
     #post.dlog_csv_post_process(base_dir, runs, output_dir, ["0x0x3C273C5"])
 
     #post.all_data_compiled(output_dir)
-    post.tdf_shmoo_graph(r"C:\Users\rpenmatc\OneDrive - Qualcomm\Documents\tdf_csv.csv", output_dir)
+    post.tdf_shmoo_graph(r"C:\Users\rpenmatc\OneDrive - Qualcomm\Desktop\data", output_dir)
 
 
 if __name__ == "__main__":
