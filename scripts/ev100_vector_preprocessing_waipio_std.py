@@ -430,7 +430,7 @@ def main():
     # network drive location to store all pattern zip files
     # dest = r'\\qctdfsrt\prj\vlsi\vetch_pst\atpg_cdp\waipio'
 
-    dest = r"C:\Users\rpenmatc\OneDrive - Qualcomm\Desktop\test_multi"
+    dest = r"C:\Users\rpenmatc\OneDrive - Qualcomm\Desktop\test_scripts"
     pattern_category = r"INT|SAF"
     vector_type = r"PROD"
 
@@ -441,7 +441,7 @@ def main():
     # rev -> dft type -> vector type -> lpu/lpc -> domain name -> freq mode
 
     folder_ordering = ['Bin Si Revision', 'Block', 'DFT type', 'Vector Type', 'Vector', 'freq mode']
-    map_path = r"C:\Users\rpenmatc\OneDrive - Qualcomm\Desktop\Automation csv\freq_mode_fixed_saf.csv"
+    map_path = r"C:\Users\rpenmatc\OneDrive - Qualcomm\Desktop\Automation csv\test_speed.csv"
     # map_path = r"C:\Users\jianingz\Desktop\freq_mode_fixed_saf.csv"
 
     # int_saf_map_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\c_weicya\ev100\seed_files\map_files\waipio\waipio_v1_map_test_p1.csv"
@@ -454,7 +454,7 @@ def main():
     ## path to log ##
     # waipio
     #py_log_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\atpg_cdp" + "\\" + chip_version + "\\" + rev + "\\" + r"py_log"
-    py_log_path = r"C:\Users\rpenmatc\OneDrive - Qualcomm\Desktop"
+    py_log_path = r"C:\Users\rpenmatc\OneDrive - Qualcomm\Desktop\normal preprocessing"
 
     conversion_log_csv_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\atpg_cdp" + "\\" + chip_version + "\\" + rev + "\\" + r"\conversion_log"
     # Uncomment the below func call (store_all_zip_atpg()) to enable store and classification of STIL zip files

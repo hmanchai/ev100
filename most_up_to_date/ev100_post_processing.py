@@ -349,6 +349,7 @@ class PostProcess():
             else 0, axis=1)
             frames = [full_df, df]
             full_df = pd.concat(frames)
+
         pivot = full_df.pivot_table(columns=['MHz'], index=['Freq Mode','Volts'], values=['Passing'], aggfunc=np.sum)
 
         cm = LinearSegmentedColormap.from_list(
