@@ -119,11 +119,11 @@ def digshell_exec(sn_to_append, log_dir, pat_type, voltage_mode, chip_version, d
                 # par_dir = log_dir + '\\'
                 data['PATDIR'] = par_dir
                 #dlog_dir = today_dir + r'dlog\' + sn + r'\' + voltage_mode + r'\'
-                dlog_dir = os.path.join(today_dir, 'dlog', sn, voltage_mode)
-                data['DLOGDIR'] = dlog_dir
+                dlog_dir = os.path.join(today_dir, 'dlog', sn)
+                data['DLOGDIR'] = dlog_dir + '\\'
                 #fail_dir = today_dir + r'failures\' + sn + r'\' + voltage_mode + r'\'
-                fail_dir = os.path.join(today_dir, 'failures', sn, voltage_mode)
-                data['FAILDIR'] = fail_dir
+                fail_dir = os.path.join(today_dir, 'failures', sn)
+                data['FAILDIR'] = fail_dir + '\\'
 
                 data["PATFILE"] = file
 

@@ -11,7 +11,6 @@ import copy
 import seaborn as sns
 from matplotlib import image
 from matplotlib.colors import LinearSegmentedColormap
-import dataframe_image as dfi
 
 
 class PostProcess():
