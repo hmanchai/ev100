@@ -323,21 +323,26 @@ class PostProcess():
                              fontsize="xx-small")
                 pos[i] = pos[i] + .2
 
-    def tdf_shmoo_graph(self, shmoo_data):
+    def tdf_shmoo_graph(self, shmoo_data, output_dir):
         """
         Create color graded graph to represent passing chips at various freq and volt combinations (shmoo table)
         """
-        df = pd.read_csv(shmoo_data)
-        pivot = df.pivot_table(index=['MHz'], columns=['Freq Mode','Voltage'], values=['Status'], aggfunc=np.sum)
+        columns = ['Freq Mode', 'Volts', "MHz", "Temp", "Passing"]
+        # frames = [mvp_df, sub_df]
+        # mvp_df = pd.concat(frames)
+        full_df = pd.DataFrame(columns, axis='columns')
+        for data in shmoo_data:
+            df = pd.read_csv(data, skiprows=5)
+            print(df)
+        pivot = df.pivot_table(columns=['MHz'], index=['Freq Mode','Voltage'], values=['Passing'], aggfunc=np.sum)
 
         cm = LinearSegmentedColormap.from_list(
             name='test',
-            colors=['red', 'white', 'green']
+            colors = sns.color_palette("RdYlGn", 15)
+            #colors=sns.color_palette("RdYlGn")
         )
         df_styled = pivot.style.background_gradient(cmap=cm)
-        fig, ax = plt.subplots(figsize=(10, 10))
-        sns.heatmap(pivot,annot=True, cmap=cm, ax=ax)
-        plt.show()
+        df_styled.to_excel(output_dir + "\\tdf_shmoo.xlsx")
 
 
 
@@ -351,12 +356,12 @@ def main():
     output_dir = r"G:\ATPG_CDP\pattern_execution\output_new"
     # base_dir = r"C:\Users\rpenmatc\OneDrive - Qualcomm\Desktop"
     # runs = ["dft_run_2021-07-01"]
-    # output_dir = r"C:\Users\rpenmatc\OneDrive - Qualcomm\Desktop\pattern_execution\output"
+    output_dir = r"C:\Users\rpenmatc\OneDrive - Qualcomm\Desktop\pattern_execution\output"
     post = PostProcess()
     #post.dlog_csv_post_process(base_dir, runs, output_dir, ["0x0x3C273C5"])
 
     #post.all_data_compiled(output_dir)
-    post.tdf_shmoo_graph(r"C:\Users\rpenmatc\OneDrive - Qualcomm\Documents\tdf_csv.csv")
+    post.tdf_shmoo_graph(r"C:\Users\rpenmatc\OneDrive - Qualcomm\Documents\tdf_csv.csv", output_dir)
 
 
 if __name__ == "__main__":

@@ -140,7 +140,7 @@ class Preprocess():
         total_pl_cnt = 0
         res_hdr_cpy = 0
         res_pl_cpy = 0
-        dict_rev_cnt = {'r1': 0}
+        dict_rev_cnt = {self.rev: 0}
 
         start = time.time()
         self.logger.info(
@@ -154,7 +154,7 @@ class Preprocess():
 
         self.setup_thread_pool(self.dest, df_file_loc)
 
-        dict_rev_cnt['r1'] += res_hdr_cpy
+        dict_rev_cnt[self.rev] += res_hdr_cpy
 
         # increment total count
         total_hdr_cnt += res_hdr_cpy
@@ -332,7 +332,7 @@ class Preprocess():
         :param payload: str
             each payload name received from mapping list
         :param row: DataFrame row
-            row data such as ['Block', 'Bin Si Revision', 'DFT type', 'Vector Type', 'Vector', 'freq mode'] to parse through
+            row data such as ['Bin Si Revision', 'Block', 'DFT type', 'Vector Type', 'Vector', 'freq mode'] to parse through
             to determine unique filepath for each header/payload grouping
         """
         dir_path = os.path.join(dest_dir, self.chip_version)
