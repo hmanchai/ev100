@@ -354,7 +354,8 @@ class PostProcess():
 
         cm = LinearSegmentedColormap.from_list(
             name='test',
-            colors = sns.color_palette("RdYlGn", 15)
+            #colors=['red', 'white', 'green']
+            colors = sns.color_palette("RdYlGn", 6)
             #colors=sns.color_palette("RdYlGn")
         )
         df_styled = pivot.style.background_gradient(cmap=cm)

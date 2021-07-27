@@ -1,10 +1,13 @@
+import fnmatch
 import glob
 import logging
 import os
 import re
 import time
 from datetime import timedelta
+from pathlib import Path
 
+import pandas as pd
 
 
 class AutomaticVectorDebug():
@@ -38,9 +41,73 @@ class AutomaticVectorDebug():
         logger.addHandler(stream_handler)
         return logger
 
+    def traverse_levels(self, par_dir, pattern_category, vector_type, logger, output_dir, list_dirs_exclude=[]):
+        """
+        The central function to execute conversion related actions across all levels of dir
+        par_dir can be any level of dir as the entry point
+
+        :param par_dir: str
+            dir to start traverse from top down
+        :param pattern_category: str
+            choices are INT, SAF and TDF
+        :param vector_type: str
+            choice of vector type has PROD or RMA. As project evolves, more choices might come
+        :param log_name: str
+            conversion log name (w/o .csv extension)
+        :param enable_del_zip: bool
+            if True, delete zip files after conversion
+        :param list_dirs_exclude: list. default = []
+            dir of DFT patterns to EXCLUDE from traverse
+        """
+
+        dict = {}
+        df_log = pd.DataFrame(columns=["period_initial", "period_new"])
+        if pattern_category == 'TDF':
+            # list_attr = ['mode','domain','block','vector_type','pattern_category']
+            list_attr = ['mode', 'domain', 'block']
+        start = time.time()
+        # traverse file structure from top down
+        for (root, dirs, files) in os.walk(par_dir, topdown=True):
+            # exclude dirs
+            dirs[:] = [d for d in dirs if d not in list_dirs_exclude]
+
+            for file in files:
+                # find the level of dir containing stil zip files and process
+                if fnmatch.fnmatch(file, '*.stil.gz'):
+                    if pattern_category.lower() == 'tdf':
+                        dict['mode'] = os.path.basename(Path(root))
+                        for i, attr in enumerate(list_attr[1:]):
+                            dict[attr] = os.path.basename(Path(root).parents[i])
+                        logger.info(
+                            f"\n**** Currently processing {pattern_category} {vector_type} {dict['block']} {dict['domain']} {dict['mode']} ****")
+                    elif pattern_category.lower() in ['int', 'saf']:
+                        logger.info(
+                            f"\n**** Currently processing {pattern_category} {vector_type} pattern from: {root} ****")
+                    # call processing func
+                    start_loop = time.time()
+                    try:
+                        # perform all conversion related actions
+                        period_initial, period_new = self.tune_capturing_time(root, logger, output_dir)
+                        new_row = {'period_initial': period_initial, 'period_new': period_new}
+                        df_log = df_log.append(new_row, ignore_index=True)
+                    except Exception:
+                        logger.exception('Error! Conversion related actions not finished completely.')
+                    end_loop = time.time()
+                    elapse_loop = end_loop - start_loop
+                    logger.info(
+                        f'**** Time elapsed for this pattern processing: {timedelta(seconds=elapse_loop)} ****')
+                    break
+        df_log.to_csv(output_dir, index=False, sep=',', header=True, mode='w')
+        end = time.time()
+        elapse = end - start
+        logger.info(f'====>> Total time elapsed for entire process: {timedelta(seconds=elapse)} <<====\n')
+
+
     def tune_capturing_time(self, path_stil_files, logger):
-        period_initial = self.change_timing(path_stil_files, logger)
+        period_initial, period_new = self.change_timing(path_stil_files, logger)
         compile_err, do_file = self.compile_do_files(path_stil_files)
+        return period_initial, period_new
+
 
     def change_timing(self, path_stil_files, logger):
         """change scan clock period in .h file
@@ -57,7 +124,8 @@ class AutomaticVectorDebug():
         try:
             change_timing = True
             h_file, list_lines, index_line_period, period_initial = self.get_timing(path_stil_files, change_timing, logger)
-            period_new = period_initial # TODO Roshni: algorithm to find new period
+            period_new = self.adjust_timing(period_initial)
+            # TODO Roshni: algorithm to find new period
             # edit the line with new timing
             str_new_period_float = '{:.4f}'.format(period_new)
             str_replace = '#define PERIOD ' + str_new_period_float + 'ns ;\n'
@@ -67,10 +135,19 @@ class AutomaticVectorDebug():
                 f.writelines(list_lines)
             logger.info(
                 '{} is updated with a new scan clock period {}ns.'.format(os.path.basename(h_file), period_new))
-            return period_initial
+            return period_initial, period_new
         except Exception:
             logger.exception('Error! Period failed to be changed.')
             return 'na'
+
+    def adjust_timing(self, period_initial):
+        # if within ev100 limit
+        lower_bound = 10
+        if period_initial > lower_bound:
+            return period_initial - 1
+        else:
+            return period_initial
+
 
     def get_timing(self, path_stil_files, change_timing, logger):
         """
@@ -133,7 +210,7 @@ class AutomaticVectorDebug():
         kw = 'MBURST'
         # set up paths
         path_tsets = os.path.join(path_stil_files, 'device', 'test')
-        path_ddc192 = "\"C:\Program Files\TEV\AXI\Bin\ddc192.exe\""
+        path_ddc192 = r"C:\Program Files\TEV\AXI\Bin\ddc192.exe"
 
         for dp_file in dp_file_list:
             # only compile the burst .dp file
@@ -169,10 +246,14 @@ def main():
     auto_debug = AutomaticVectorDebug()
     chip_version = 'waipio'
     rev = 'r1'
+    par_dir = ""
+    pattern_category = "INT"
+    vector_type = "prod"
+
     updated_date_time = time.strftime("%Y%m%d-%H%M%S")
     py_log_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\atpg_cdp" + "\\" + chip_version + "\\" + rev + r'\py_log'
     py_log_name = 'py_conversion_' + updated_date_time + '.log'
+    output_log = r"C:\Users\rpenmatc\OneDrive - Qualcomm\Desktop\tune_capturing"
     logger = auto_debug.set_up_logger(py_log_path, py_log_name)
-    auto_debug.tune_capturing_time("", logger)
-
+    auto_debug.traverse_levels(par_dir, pattern_category, vector_type, logger, output_log)
 
