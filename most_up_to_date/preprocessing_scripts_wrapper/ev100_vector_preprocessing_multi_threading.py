@@ -107,8 +107,8 @@ class Preprocess():
         :param log_level: str
             defines the level of logger
         """
-        cmd = "pycopier " + "\"" + path_to_file + "\"" + " " + "\"" + dest_dir + "\""
-        #cmd = "python -m pycopier " + "\"" + path_to_file + "\"" + " " + "\"" + dest_dir + "\""
+       # cmd = "pycopier " + "\"" + path_to_file + "\"" + " " + "\"" + dest_dir + "\""
+        cmd = "python -m pycopier " + "\"" + path_to_file + "\"" + " " + "\"" + dest_dir + "\""
         subprocess.call(cmd, shell=True)
         if log_level == 'info':
             self.logger.info(f'File copied: {os.path.basename(path_to_file)}')

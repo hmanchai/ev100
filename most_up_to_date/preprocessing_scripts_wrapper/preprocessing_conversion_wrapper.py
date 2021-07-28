@@ -105,7 +105,7 @@ class wrapper():
         :param pin_group: pin group label ex ALL_PINS
         :type pin_group: str
         :param enable_cyc_cnt: Enable cycle count 1 or 0
-        :type enable_cyc_cnt: int
+        :type enable_cyc_cnt: intN
         :param blocks: blocks that you want to generate pats.txt
         (if want to filter must uncomment dir_pat = os.path.join(dir_pat, block))
         :type blocks: list

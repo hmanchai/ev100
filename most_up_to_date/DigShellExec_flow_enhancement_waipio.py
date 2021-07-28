@@ -129,6 +129,9 @@ def digshell_exec(sn_to_append, log_dir, pat_type, voltage_mode, chip_version, d
 
                 with open(tempfile, 'w') as write_file:
                     x = json.dump(data, write_file, indent=4)
+
+                print(tempfile)
+                #command = r'C:\AXITestPrograms\DigShell\DigShell.exe ' + tempfile
                 command = r'C:\AXITestPrograms\DigShell\DigShell.exe {0}'.format(tempfile)
                 print('\nCommand: ' + command)
                 res = os.system(command)
