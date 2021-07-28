@@ -41,7 +41,7 @@ class AutomaticVectorDebug():
         logger.addHandler(stream_handler)
         return logger
 
-    def traverse_levels(self, par_dir, pattern_category, vector_type, logger, output_dir, list_dirs_exclude=[]):
+    def traverse_levels(self, par_dir, pattern_category, vector_type, logger, output_dir, did_pass, list_dirs_exclude=[]):
         """
         The central function to execute conversion related actions across all levels of dir
         par_dir can be any level of dir as the entry point
@@ -68,6 +68,7 @@ class AutomaticVectorDebug():
         start = time.time()
         # traverse file structure from top down
         for (root, dirs, files) in os.walk(par_dir, topdown=True):
+
             # exclude dirs
             dirs[:] = [d for d in dirs if d not in list_dirs_exclude]
 
@@ -87,7 +88,7 @@ class AutomaticVectorDebug():
                     start_loop = time.time()
                     try:
                         # perform all conversion related actions
-                        period_initial, period_new = self.tune_capturing_time(root, logger, output_dir)
+                        period_initial, period_new = self.tune_capturing_time(root, logger, did_pass)
                         new_row = {'period_initial': period_initial, 'period_new': period_new}
                         df_log = df_log.append(new_row, ignore_index=True)
                     except Exception:
@@ -103,13 +104,13 @@ class AutomaticVectorDebug():
         logger.info(f'====>> Total time elapsed for entire process: {timedelta(seconds=elapse)} <<====\n')
 
 
-    def tune_capturing_time(self, path_stil_files, logger):
-        period_initial, period_new = self.change_timing(path_stil_files, logger)
-        compile_err, do_file = self.compile_do_files(path_stil_files)
+    def tune_capturing_time(self, path_stil_files, logger, did_pass):
+        period_initial, period_new = self.change_timing(path_stil_files, logger, did_pass)
+        compile_err, do_file = self.compile_do_files(path_stil_files, logger)
         return period_initial, period_new
 
 
-    def change_timing(self, path_stil_files, logger):
+    def change_timing(self, path_stil_files, logger, did_pass):
         """change scan clock period in .h file
 
         :param logger:
@@ -124,8 +125,7 @@ class AutomaticVectorDebug():
         try:
             change_timing = True
             h_file, list_lines, index_line_period, period_initial = self.get_timing(path_stil_files, change_timing, logger)
-            period_new = self.adjust_timing(period_initial)
-
+            period_new = self.adjust_timing(period_initial, did_pass)
             # edit the line with new timing
             str_new_period_float = '{:.4f}'.format(period_new)
             str_replace = '#define PERIOD ' + str_new_period_float + 'ns ;\n'
@@ -140,13 +140,14 @@ class AutomaticVectorDebug():
             logger.exception('Error! Period failed to be changed.')
             return 'na'
 
-    def adjust_timing(self, period_initial):
+    def adjust_timing(self, period_initial, did_pass):
         # if within ev100 limit
         lower_bound = 10
-        if period_initial > lower_bound:
+
+        if period_initial > lower_bound and did_pass:
             return period_initial - 1
         else:
-            return period_initial
+            return period_initial + 1
 
 
     def get_timing(self, path_stil_files, change_timing, logger):
@@ -180,6 +181,7 @@ class AutomaticVectorDebug():
                     match = re.search('PERIOD (\d+)', list_lines[index_line_period], re.IGNORECASE)
                     if match:
                         period_initial = match.group(1)
+                        period_initial = int(period_initial)
                         logger.info('Initial scan clock period is {}ns'.format(period_initial))
 
                     if change_timing:
@@ -210,7 +212,7 @@ class AutomaticVectorDebug():
         kw = 'MBURST'
         # set up paths
         path_tsets = os.path.join(path_stil_files, 'device', 'test')
-        path_ddc192 = r"C:\Program Files\TEV\AXI\Bin\ddc192.exe"
+        path_ddc192 = r'C:\"Program Files"\TEV\AXI\Bin\ddc192.exe'
 
         for dp_file in dp_file_list:
             # only compile the burst .dp file
@@ -246,14 +248,18 @@ def main():
     auto_debug = AutomaticVectorDebug()
     chip_version = 'waipio'
     rev = 'r1'
-    par_dir = ""
-    pattern_category = "INT"
+    par_dir = r"C:\Users\hmanchai\Desktop\test"
+    pattern_category = "SAF"
     vector_type = "prod"
 
     updated_date_time = time.strftime("%Y%m%d-%H%M%S")
     py_log_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\atpg_cdp" + "\\" + chip_version + "\\" + rev + r'\py_log'
     py_log_name = 'py_conversion_' + updated_date_time + '.log'
-    output_log = r"C:\Users\rpenmatc\OneDrive - Qualcomm\Desktop\tune_capturing"
+    output_log = r"C:\Users\hmanchai\Desktop\test\timing_update.csv"
+    did_pass = False
     logger = auto_debug.set_up_logger(py_log_path, py_log_name)
-    auto_debug.traverse_levels(par_dir, pattern_category, vector_type, logger, output_log)
+    auto_debug.traverse_levels(par_dir, pattern_category, vector_type, logger, output_log, did_pass)
 
+
+if __name__ == "__main__":
+    main()
