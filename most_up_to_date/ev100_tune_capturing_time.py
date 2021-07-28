@@ -4,7 +4,7 @@ import logging
 import os
 import re
 import time
-from datetime import timedelta
+from datetime import timedelta, date
 from pathlib import Path
 
 import pandas as pd
@@ -61,7 +61,7 @@ class AutomaticVectorDebug():
         """
 
         dict = {}
-        df_log = pd.DataFrame(columns=["period_initial", "period_new"])
+        df_log = pd.DataFrame(columns=[".do recompiled", "period_initial", "period_new"])
         if pattern_category == 'TDF':
             # list_attr = ['mode','domain','block','vector_type','pattern_category']
             list_attr = ['mode', 'domain', 'block']
@@ -89,7 +89,8 @@ class AutomaticVectorDebug():
                     try:
                         # perform all conversion related actions
                         period_initial, period_new = self.tune_capturing_time(root, logger, did_pass)
-                        new_row = {'period_initial': period_initial, 'period_new': period_new}
+                        pattern_files = glob.glob(root + '/**/MBURST*.do', recursive=True)
+                        new_row = {".do recompiled": re.search("(.*)(\\\)(.*)$", pattern_files[0]).group(3), 'period_initial': period_initial, 'period_new': period_new}
                         df_log = df_log.append(new_row, ignore_index=True)
                     except Exception:
                         logger.exception('Error! Conversion related actions not finished completely.')
@@ -98,7 +99,12 @@ class AutomaticVectorDebug():
                     logger.info(
                         f'**** Time elapsed for this pattern processing: {timedelta(seconds=elapse_loop)} ****')
                     break
-        df_log.to_csv(output_dir, index=False, sep=',', header=True, mode='w')
+        today = date.today()
+        df_log.insert(0, "date", str(today))
+        if os.path.exists(output_dir):
+            df_log.to_csv(output_dir, index=False, sep=',', header=False, mode='a')
+        else:
+            df_log.to_csv(output_dir, index=False, sep=',', header=True, mode='w')
         end = time.time()
         elapse = end - start
         logger.info(f'====>> Total time elapsed for entire process: {timedelta(seconds=elapse)} <<====\n')
@@ -256,7 +262,7 @@ def main():
     py_log_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\atpg_cdp" + "\\" + chip_version + "\\" + rev + r'\py_log'
     py_log_name = 'py_conversion_' + updated_date_time + '.log'
     output_log = r"C:\Users\hmanchai\Desktop\test\timing_update.csv"
-    did_pass = False
+    did_pass = True
     logger = auto_debug.set_up_logger(py_log_path, py_log_name)
     auto_debug.traverse_levels(par_dir, pattern_category, vector_type, logger, output_log, did_pass)
 
