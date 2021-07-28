@@ -42,7 +42,7 @@ class PostProcess():
             list_results = []
             sn_list = []
             sn_files = {}
-            path = glob.glob(dlog_dir + "\\*\\*\\")
+            #path = glob.glob(dlog_dir + "\\*\\*\\")
 
             # freq_mode = re.search("(.*)(\\\)(.*)(\\\)$", path[0]).group(3)
             output_dir = os.path.join(output_dir)
@@ -171,7 +171,6 @@ class PostProcess():
     #
     #     output_plot = os.path.join(output_path, title + '.jpg')
     #     plt.savefig(output_plot)
-
 
     def all_data_compiled(self, output_dir):
         """
@@ -330,7 +329,7 @@ class PostProcess():
         columns = ['Freq Mode', 'Volts', "MHz", "Temp", "Passing"]
         # frames = [mvp_df, sub_df]
         # mvp_df = pd.concat(frames)
-        full_df = pd.DataFrame(columns=columns)
+        df_shmoo = pd.DataFrame(columns=columns)
 
         list_csv = glob.glob(shmoo_data + "\\*")
         for data in list_csv:
@@ -347,20 +346,17 @@ class PostProcess():
             df = df.set_axis(columns, axis=1)
             df["Passing"] = df.apply(lambda x: 1 if re.search("PASS", x["Passing"])
             else 0, axis=1)
-            frames = [full_df, df]
-            full_df = pd.concat(frames)
+            frames = [df_shmoo, df]
+            df_shmoo = pd.concat(frames)
 
-        pivot = full_df.pivot_table(columns=['MHz'], index=['Freq Mode','Volts'], values=['Passing'], aggfunc=np.sum)
-
+        pivot = df_shmoo.pivot_table(columns=['MHz'], index=['Freq Mode', 'Volts'], values=['Passing'], aggfunc=np.sum)
         cm = LinearSegmentedColormap.from_list(
             name='test',
-            #colors=['red', 'white', 'green']
-            colors = sns.color_palette("RdYlGn", 6)
-            #colors=sns.color_palette("RdYlGn")
+            colors=sns.color_palette("RdYlGn", 6)
         )
         df_styled = pivot.style.background_gradient(cmap=cm)
-        df_styled.to_excel(output_dir + "\\tdf_shmoo.xlsx")
 
+        df_styled.to_excel(output_dir + "\\tdf_shmoo.xlsx")
 
 
 def main():
@@ -375,9 +371,9 @@ def main():
     # runs = ["dft_run_2021-07-01"]
     output_dir = r"C:\Users\rpenmatc\OneDrive - Qualcomm\Desktop\pattern_execution\output"
     post = PostProcess()
-    #post.dlog_csv_post_process(base_dir, runs, output_dir, ["0x0x3C273C5"])
+    post.dlog_csv_post_process(base_dir, runs, output_dir, ["0x0x3C273C5"])
 
-    #post.all_data_compiled(output_dir)
+    # post.all_data_compiled(output_dir)
     post.tdf_shmoo_graph(r"C:\Users\rpenmatc\OneDrive - Qualcomm\Desktop\data", output_dir)
 
 

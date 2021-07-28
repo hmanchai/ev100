@@ -125,7 +125,7 @@ class AutomaticVectorDebug():
             change_timing = True
             h_file, list_lines, index_line_period, period_initial = self.get_timing(path_stil_files, change_timing, logger)
             period_new = self.adjust_timing(period_initial)
-            # TODO Roshni: algorithm to find new period
+
             # edit the line with new timing
             str_new_period_float = '{:.4f}'.format(period_new)
             str_replace = '#define PERIOD ' + str_new_period_float + 'ns ;\n'

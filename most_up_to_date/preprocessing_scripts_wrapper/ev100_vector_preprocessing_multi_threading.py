@@ -339,7 +339,7 @@ class Preprocess():
         for folder_name in self.folder_ordering:
             if folder_name == 'Vector':
                 comp_type = re.search("(lpc|lpu)", row[folder_name])[0]
-                if (row['DFT type'] == 'SAF'):
+                if row['DFT type'] == 'SAF':
                     if re.search("(lpc_se0_|lpu_se0_)(.*)", payload):
                         name, split_name = self.find_value_after_regex(payload, "(lpc_se0_|lpu_se0_)(.*)")
                         vector_name, split = self.find_value_after_regex(header, "(lpc_se0_|lpu_se0_)(.*)")
