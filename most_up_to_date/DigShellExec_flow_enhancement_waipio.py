@@ -208,6 +208,7 @@ def dlog_csv_post_process(dlog_dir, output_dir, output_csv_name, pats_txt, volta
 
         # set up for csv output
         csv_output = os.path.join(output_dir, output_csv_name + '.csv')
+        csv_extension = os.path.join(output_dir + "_0xbeeeeeef", output_csv_name + '.csv')
         if os.path.exists(csv_output):
             try:
                 print(f'\n*** Saving trimmed dlog csv to {csv_output}')
@@ -223,7 +224,7 @@ def dlog_csv_post_process(dlog_dir, output_dir, output_csv_name, pats_txt, volta
             else:
                 print('\n***Dlog csv saving completed.')
         else:
-            df_dlog.to_csv(csv_output, header=True, index=False, mode='w')
+            df_dlog.to_csv(csv_extension, header=True, index=False, mode='w')
             print('\n*** Dlog csv saving completed.')
 
 

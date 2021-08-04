@@ -258,7 +258,7 @@ class PostProcess():
         plt.bar(X_axis, list(passing_rate.values())[1], 0.2, label="SAF")
         plt.bar(X_axis + 0.2, list(passing_rate.values())[2], 0.2, label="TDF")
         plt.xticks(X_axis, freq_modes)
-        plt.xlabel('Frequency Mode')
+        plt.xlabel('Pattern Category')
         plt.ylabel('Percentage Passing (%)')
         plt.legend()
         spacing = [-.2, .8, 1.8, 2.8]
@@ -274,7 +274,7 @@ class PostProcess():
         plt.bar(X_axis, total_parts[1], 0.2, label="SAF")
         plt.bar(X_axis + 0.2, total_parts[2], 0.2, label="TDF")
         plt.xticks(X_axis, freq_modes)
-        plt.xlabel('Frequency Mode')
+        plt.xlabel('Pattern Category')
         plt.ylabel('# of Passing Parts')
         plt.legend()
         spacing = [-.2, .8, 1.8, 2.8]

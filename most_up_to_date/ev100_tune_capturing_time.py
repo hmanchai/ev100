@@ -111,10 +111,12 @@ class AutomaticVectorDebug():
         elapse = end - start
         logger.info(f'====>> Total time elapsed for entire process: {timedelta(seconds=elapse)} <<====\n')
 
+
     def tune_capturing_time(self, path_stil_files, logger, did_pass):
         period_initial, period_new = self.change_timing(path_stil_files, logger, did_pass)
         compile_err, do_file = self.compile_do_files(path_stil_files, logger)
         return period_initial, period_new
+
 
     def change_timing(self, path_stil_files, logger, did_pass):
         """change scan clock period in .h file
@@ -155,6 +157,7 @@ class AutomaticVectorDebug():
             return period_initial - 1
         else:
             return period_initial + 1
+
 
     def get_timing(self, path_stil_files, change_timing, logger):
         """
@@ -200,6 +203,7 @@ class AutomaticVectorDebug():
         except Exception:
             logger.exception('Error! Initial period info cannot be obtained.')
             return 'na'
+
 
     def compile_do_files(self, path_stil_files, logger):
         """
