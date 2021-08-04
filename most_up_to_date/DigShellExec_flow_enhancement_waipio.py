@@ -11,6 +11,7 @@ import os
 import pandas as pd
 import numpy as np
 import fnmatch
+import subprocess
 # from ev100_dlog_postprocess import dlog_csv_post_process
 import argparse
 import glob
@@ -27,8 +28,7 @@ import time
 # print('\n**** EV100 Control Signal setup completed. DFT patterns execution coming next ****')
 
 
-
-def digshell_exec(sn_to_append, log_dir, pat_type, voltage_mode, chip_version, dest):
+def digshell_exec(sn_to_append, log_dir, pat_type, voltage_mode, dest):
     """
     execute digshell to run DFT patterns
     :param sn_to_append: str
@@ -44,13 +44,13 @@ def digshell_exec(sn_to_append, log_dir, pat_type, voltage_mode, chip_version, d
 
     # TODO Roshni: change pats.txt paths for Waipio once available; add functionality to select between projects so project-specific pats.txt paths can be used
     if pat_type == 'tdf':
-        pats_base_dir = dest + r'\Lahaina\r2\pattern_execution\Pattern_list\Seed_file_DO_NOT_modify\tdf'
+        pats_base_dir = r'F:\ATPG_CDP\Lahaina\r2\pattern_execution\Pattern_list\Seed_file_DO_NOT_modify\tdf'
     elif pat_type == 'atpg':
-        pats_base_dir = dest + r'\pattern_execution\pattern_list'
+        pats_base_dir = os.path.join(dest, 'pattern_execution', 'pattern_list')
 
     temp_path = r'\\qctdfsrt\prj\vlsi\vetch_pst\jianingz\handler_integration\temp_file_DO_NOT_MODIFY'
     exit_file = 'digshell_exec_success.txt'
-    exit_file_path = os.path.join(temp_path,exit_file)
+    exit_file_path = os.path.join(temp_path, exit_file)
     if os.path.exists(exit_file_path):
         print('\n****** Removing previous {}. ******'.format(exit_file))
         try:
@@ -62,7 +62,7 @@ def digshell_exec(sn_to_append, log_dir, pat_type, voltage_mode, chip_version, d
     else:
         print('\n****** No {} found.******'.format(exit_file))
 
-
+    # TODO Roshni: add functionality to select between projects so project-specific JSON file can be loaded
     jsonfile = r"C:\vi\pats_abs\go_" + chip_version.capitalize() + "_abs.json"
     tempfile = r"C:\AXITestPrograms\DigShell" + "\\" + chip_version + r"_temp.json"
     with open(jsonfile) as f:
@@ -71,9 +71,9 @@ def digshell_exec(sn_to_append, log_dir, pat_type, voltage_mode, chip_version, d
 
     ## define paths to pats.txt ##
     # pat_txt_dir = r'F:\demo\demo_test_022421'  # svs INT/SAF demo pattern
-    pat_txt_dir = os.path.join(pats_base_dir,voltage_mode)  # svs INT/SAF demo pattern
+    pat_txt_dir = os.path.join(pats_base_dir, voltage_mode)  # svs INT/SAF demo pattern
     print('\n****** DFT patterns will be loaded from {} ******'.format(pat_txt_dir))
-    list_dirs_exclude = []
+    list_dirs_exclude = ['SAF']
     # if test_dir == r'F:\demo\demo_test_022421' or r'F:\demo\demo_test_022421 - Copy' :
     #     summary_dlog = sn + '_demo_test'
     # else:
@@ -102,10 +102,11 @@ def digshell_exec(sn_to_append, log_dir, pat_type, voltage_mode, chip_version, d
     ############################################
 
     today = date.today()
-    base_dir = dest + r'\pattern_execution\execution_dlog'
-    today_dir = os.path.join(base_dir,'dft_run_'+str(today))
+    base_dir = os.path.join(dest, 'pattern_execution', 'execution_dlog')
+
+    today_dir = os.path.join(base_dir, 'dft_run_' + str(today))
     if not os.path.exists(today_dir):
-        os.mkdir(today_dir)
+        os.makedirs(today_dir)
 
     # modify PATS.txt name and relevant directories dynamically
     for root, dirs, files in os.walk(pat_txt_dir, topdown=True):
@@ -118,30 +119,33 @@ def digshell_exec(sn_to_append, log_dir, pat_type, voltage_mode, chip_version, d
                 par_dir = root + '\\'
                 # par_dir = log_dir + '\\'
                 data['PATDIR'] = par_dir
-                #dlog_dir = today_dir + r'dlog\' + sn + r'\' + voltage_mode + r'\'
+                # dlog_dir = today_dir + r'dlog\' + sn + r'\' + voltage_mode + r'\'
                 dlog_dir = os.path.join(today_dir, 'dlog', sn)
-                data['DLOGDIR'] = dlog_dir + '\\'
-                #fail_dir = today_dir + r'failures\' + sn + r'\' + voltage_mode + r'\'
+                dlog_dir = dlog_dir + '\\'
+                data['DLOGDIR'] = dlog_dir
+                # fail_dir = today_dir + r'failures\' + sn + r'\' + voltage_mode + r'\'
                 fail_dir = os.path.join(today_dir, 'failures', sn)
-                data['FAILDIR'] = fail_dir + '\\'
+                fail_dir = fail_dir + '\\'
+                data['FAILDIR'] = fail_dir
 
                 data["PATFILE"] = file
 
                 with open(tempfile, 'w') as write_file:
                     x = json.dump(data, write_file, indent=4)
 
-                print(tempfile)
-                #command = r'C:\AXITestPrograms\DigShell\DigShell.exe ' + tempfile
                 command = r'C:\AXITestPrograms\DigShell\DigShell.exe {0}'.format(tempfile)
                 print('\nCommand: ' + command)
                 res = os.system(command)
-                
-            
+                print('Printing DIGSHELL execution result:')
+                print(res)
+                # subprocess.call(command, shell=True)
+
                 # print('os.sytem execution result: ', res)
 
                 # generate summary dlog csv
                 # dlog_csv_post_process(dlog_dir, output_dir, summary_dlog, file)
                 file_path = os.path.join(root, file)
+                print("execution logdir: " + log_dir)
                 dlog_csv_post_process(dlog_dir, log_dir, summary_dlog, file_path, voltage_mode)
 
     # print('\n**** Test execution completed. Data processing in progress ****')
@@ -152,6 +156,7 @@ def digshell_exec(sn_to_append, log_dir, pat_type, voltage_mode, chip_version, d
     print('\n****** {} created. ******'.format(exit_file))
 
     time.sleep(6)
+
 
 def dlog_csv_post_process(dlog_dir, output_dir, output_csv_name, pats_txt, voltage_mode):
     """
@@ -169,21 +174,21 @@ def dlog_csv_post_process(dlog_dir, output_dir, output_csv_name, pats_txt, volta
     """
     # csv_path = os.path.join(dlog_dir, '*.csv')
     csv_path = dlog_dir + '*.csv'
-    #csv_path = "E:\johnny\dlog_csv_debugging\int_and_saf.csv"
+    # csv_path = "E:\johnny\dlog_csv_debugging\int_and_saf.csv"
     list_all_csv = glob.glob(csv_path)
 
     try:
         # grab the latest csv
         csv_to_edit = max(list_all_csv, key=os.path.getctime)
-        #csv_to_edit = "E:\johnny\dlog_csv_debugging\int_and_saf.csv"
+        # csv_to_edit = "E:\johnny\dlog_csv_debugging\int_and_saf.csv"
     except ValueError:
         print('\n*** Error! No dlog csv exists.')
     except Exception as e:
         print(e)
         print('\n*** Error! Please refer to Traceback message.')
-    else:             
+    else:
         # load csv
-        #df_dlog_raw = pd.read_csv(csv_to_edit, index_col=False)
+        # df_dlog_raw = pd.read_csv(csv_to_edit, index_col=False)
         df_dlog_raw = pd.read_csv(csv_to_edit, index_col=False)
         # grab all gpio columns
         df_dlog_gpio = df_dlog_raw.filter(regex='gpio_')
@@ -207,8 +212,11 @@ def dlog_csv_post_process(dlog_dir, output_dir, output_csv_name, pats_txt, volta
         df_dlog['voltage_mode'] = voltage_mode
 
         # set up for csv output
+        print("post process output: " + output_dir)
         csv_output = os.path.join(output_dir, output_csv_name + '.csv')
-        csv_extension = os.path.join(output_dir + "_0xbeeeeeef", output_csv_name + '.csv')
+        print("post process output full path: " + csv_output)
+        if not os.path.exists(output_dir):
+            csv_output = os.path.join(output_dir + "_0xbeeeeeef", output_csv_name + '.csv')
         if os.path.exists(csv_output):
             try:
                 print(f'\n*** Saving trimmed dlog csv to {csv_output}')
@@ -224,14 +232,11 @@ def dlog_csv_post_process(dlog_dir, output_dir, output_csv_name, pats_txt, volta
             else:
                 print('\n***Dlog csv saving completed.')
         else:
-            df_dlog.to_csv(csv_extension, header=True, index=False, mode='w')
+            df_dlog.to_csv(csv_output, header=True, index=False, mode='w')
             print('\n*** Dlog csv saving completed.')
 
 
 def main():
-    chip_version = 'waipio'
-    dest = r'G:\ATPG_CDP'
-
     parser = argparse.ArgumentParser(description='Execute DFT patterns with EV100 Digshell program')
     parser.add_argument('-sn', dest='sn', type=str, help='sn of the part from its fuse dump')
     parser.add_argument('-log_dir', dest='log_dir', type=str,
@@ -240,10 +245,18 @@ def main():
                         help='DFT pattern type')
     parser.add_argument('-voltage_mode', dest='voltage_mode', type=str,
                         help='voltage mode associated with DFT patterns')
+    parser.add_argument('-dest', dest='dest', type=str,
+                        help='output logs destination')
     args = parser.parse_args()
 
+    freq_mode = str(args.voltage_mode).upper()
+    if freq_mode == "LSVS":
+        freq_mode = "SVSD1"
+
     # call digshell_exec()
-    digshell_exec(args.sn, args.log_dir, args.pat_type, args.voltage_mode, chip_version, dest)
+    digshell_exec(args.sn, args.log_dir, args.pat_type, freq_mode, args.dest)
+    print("main log_dir: " + args.log_dir)
+
 
 if __name__ == '__main__':
     main()
