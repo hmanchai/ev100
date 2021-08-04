@@ -373,7 +373,7 @@ def main():
     post = PostProcess()
     post.dlog_csv_post_process(base_dir, runs, output_dir, ["0x0x3C273C5"])
 
-    # post.all_data_compiled(output_dir)
+    post.all_data_compiled(output_dir)
     post.tdf_shmoo_graph(r"C:\Users\rpenmatc\OneDrive - Qualcomm\Desktop\data", output_dir)
 
 

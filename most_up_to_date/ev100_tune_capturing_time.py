@@ -256,7 +256,7 @@ def main():
     py_log_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\atpg_cdp" + "\\" + chip_version + "\\" + rev + r'\py_log'
     py_log_name = 'py_conversion_' + updated_date_time + '.log'
     output_log = r"C:\Users\hmanchai\Desktop\test\timing_update.csv"
-    did_pass = False
+    did_pas = True
     logger = auto_debug.set_up_logger(py_log_path, py_log_name)
     auto_debug.traverse_levels(par_dir, pattern_category, vector_type, logger, output_log, did_pass)
 
