@@ -41,7 +41,8 @@ class AutomaticVectorDebug():
         logger.addHandler(stream_handler)
         return logger
 
-    def traverse_levels(self, par_dir, pattern_category, vector_type, logger, output_dir, did_pass, list_dirs_exclude=[]):
+    def traverse_levels(self, par_dir, pattern_category, vector_type, logger, output_dir, did_pass,
+                        list_dirs_exclude=[]):
         """
         The central function to execute conversion related actions across all levels of dir
         par_dir can be any level of dir as the entry point
@@ -90,7 +91,8 @@ class AutomaticVectorDebug():
                         # perform all conversion related actions
                         period_initial, period_new = self.tune_capturing_time(root, logger, did_pass)
                         pattern_files = glob.glob(root + '/**/MBURST*.do', recursive=True)
-                        new_row = {".do recompiled": re.search("(.*)(\\\)(.*)$", pattern_files[0]).group(3), 'period_initial': period_initial, 'period_new': period_new}
+                        new_row = {".do recompiled": re.search("(.*)(\\\)(.*)$", pattern_files[0]).group(3),
+                                   'period_initial': period_initial, 'period_new': period_new}
                         df_log = df_log.append(new_row, ignore_index=True)
                     except Exception:
                         logger.exception('Error! Conversion related actions not finished completely.')
@@ -109,12 +111,10 @@ class AutomaticVectorDebug():
         elapse = end - start
         logger.info(f'====>> Total time elapsed for entire process: {timedelta(seconds=elapse)} <<====\n')
 
-
     def tune_capturing_time(self, path_stil_files, logger, did_pass):
         period_initial, period_new = self.change_timing(path_stil_files, logger, did_pass)
         compile_err, do_file = self.compile_do_files(path_stil_files, logger)
         return period_initial, period_new
-
 
     def change_timing(self, path_stil_files, logger, did_pass):
         """change scan clock period in .h file
@@ -130,7 +130,8 @@ class AutomaticVectorDebug():
         """
         try:
             change_timing = True
-            h_file, list_lines, index_line_period, period_initial = self.get_timing(path_stil_files, change_timing, logger)
+            h_file, list_lines, index_line_period, period_initial = self.get_timing(path_stil_files, change_timing,
+                                                                                    logger)
             period_new = self.adjust_timing(period_initial, did_pass)
             # edit the line with new timing
             str_new_period_float = '{:.4f}'.format(period_new)
@@ -154,7 +155,6 @@ class AutomaticVectorDebug():
             return period_initial - 1
         else:
             return period_initial + 1
-
 
     def get_timing(self, path_stil_files, change_timing, logger):
         """
@@ -200,7 +200,6 @@ class AutomaticVectorDebug():
         except Exception:
             logger.exception('Error! Initial period info cannot be obtained.')
             return 'na'
-
 
     def compile_do_files(self, path_stil_files, logger):
         """
@@ -256,7 +255,7 @@ def main():
     rev = 'r1'
     par_dir = r"C:\Users\hmanchai\Desktop\test"
     pattern_category = "SAF"
-    vector_type = "prod"
+    vector_type = "PROD"
 
     updated_date_time = time.strftime("%Y%m%d-%H%M%S")
     py_log_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\atpg_cdp" + "\\" + chip_version + "\\" + rev + r'\py_log'

@@ -19,7 +19,7 @@ class PostProcess():
     generates graphs and csv files
     """
 
-    def dlog_csv_post_process(self, base_dir, runs, output_dir, exclude_chips):
+    def dlog_csv_post_process(self, base_dir, runs, output_dir, exclude_chips = []):
         """
         process individual dlog csv's to generate a summary test log csv of all runs
         removes all duplicates (saves first occurring duplicate)
@@ -258,7 +258,7 @@ class PostProcess():
         plt.bar(X_axis, list(passing_rate.values())[1], 0.2, label="SAF")
         plt.bar(X_axis + 0.2, list(passing_rate.values())[2], 0.2, label="TDF")
         plt.xticks(X_axis, freq_modes)
-        plt.xlabel('Pattern Category')
+        plt.xlabel('Frequency Mode')
         plt.ylabel('Percentage Passing (%)')
         plt.legend()
         spacing = [-.2, .8, 1.8, 2.8]
@@ -274,7 +274,7 @@ class PostProcess():
         plt.bar(X_axis, total_parts[1], 0.2, label="SAF")
         plt.bar(X_axis + 0.2, total_parts[2], 0.2, label="TDF")
         plt.xticks(X_axis, freq_modes)
-        plt.xlabel('Pattern Category')
+        plt.xlabel('Frequency Mode')
         plt.ylabel('# of Passing Parts')
         plt.legend()
         spacing = [-.2, .8, 1.8, 2.8]
@@ -364,17 +364,17 @@ def main():
     Post process results of runs for dft vectors and various freq modes
     """
     chip_version = 'Waipio'
-    base_dir = r"G:\ATPG_CDP"
-    runs = ["dft_run_2021-07-06", "dft_run_2021-07-07", "dft_run_2021-07-08"]
-    output_dir = r"G:\ATPG_CDP\pattern_execution\output_new"
+    base_dir = r"G:\atpg_cdp_velocity_8.1.1.2"
+    runs = ["dft_run_2021-08-03"]
+    #output_dir = r"G:\ATPG_CDP\pattern_execution\output_new"
     # base_dir = r"C:\Users\rpenmatc\OneDrive - Qualcomm\Desktop"
     # runs = ["dft_run_2021-07-01"]
-    output_dir = r"C:\Users\rpenmatc\OneDrive - Qualcomm\Desktop\pattern_execution\output"
+    output_dir = r"G:\atpg_cdp_velocity_8.1.1.2\pattern_execution\execution_dlog\dft_run_2021-08-03"
     post = PostProcess()
-    post.dlog_csv_post_process(base_dir, runs, output_dir, ["0x0x3C273C5"])
+    post.dlog_csv_post_process(base_dir, runs, output_dir)
 
-    # post.all_data_compiled(output_dir)
-    post.tdf_shmoo_graph(r"C:\Users\rpenmatc\OneDrive - Qualcomm\Desktop\data", output_dir)
+    post.all_data_compiled(output_dir)
+    #post.tdf_shmoo_graph(r"C:\Users\rpenmatc\OneDrive - Qualcomm\Desktop\data", output_dir)
 
 
 if __name__ == "__main__":
