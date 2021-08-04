@@ -28,9 +28,15 @@ import time
 # print('\n**** EV100 Control Signal setup completed. DFT patterns execution coming next ****')
 
 
-def digshell_exec(sn_to_append, log_dir, pat_type, voltage_mode, dest):
+def digshell_exec(sn_to_append, log_dir, pat_type, voltage_mode, dest, chip_version, list_dirs_exclude):
     """
     execute digshell to run DFT patterns
+    :param dest: str
+        base directory that holds pattern_execution folder
+    :param chip_version: str
+        chip_version name used to adjust file paths
+    :param list_dirs_exclude: list str
+        method to filter out different pats.txt files to not execute on, folders to ignore
     :param sn_to_append: str
         serial number of the DUT (w/o "0x")
     :param log_dir: str
@@ -42,9 +48,11 @@ def digshell_exec(sn_to_append, log_dir, pat_type, voltage_mode, dest):
     :return:
     """
 
-    # TODO Roshni: change pats.txt paths for Waipio once available; add functionality to select between projects so project-specific pats.txt paths can be used
+    if list_dirs_exclude is None:
+        list_dirs_exclude = []
     if pat_type == 'tdf':
-        pats_base_dir = r'F:\ATPG_CDP\Lahaina\r2\pattern_execution\Pattern_list\Seed_file_DO_NOT_modify\tdf'
+        # pats_base_dir = r'F:\ATPG_CDP\Lahaina\r2\pattern_execution\Pattern_list\Seed_file_DO_NOT_modify\tdf'
+        pats_base_dir = os.path.join(dest, 'pattern_execution', 'pattern_list')
     elif pat_type == 'atpg':
         pats_base_dir = os.path.join(dest, 'pattern_execution', 'pattern_list')
 
@@ -73,7 +81,7 @@ def digshell_exec(sn_to_append, log_dir, pat_type, voltage_mode, dest):
     # pat_txt_dir = r'F:\demo\demo_test_022421'  # svs INT/SAF demo pattern
     pat_txt_dir = os.path.join(pats_base_dir, voltage_mode)  # svs INT/SAF demo pattern
     print('\n****** DFT patterns will be loaded from {} ******'.format(pat_txt_dir))
-    list_dirs_exclude = ['SAF']
+
     # if test_dir == r'F:\demo\demo_test_022421' or r'F:\demo\demo_test_022421 - Copy' :
     #     summary_dlog = sn + '_demo_test'
     # else:
@@ -237,6 +245,9 @@ def dlog_csv_post_process(dlog_dir, output_dir, output_csv_name, pats_txt, volta
 
 
 def main():
+    chip_version = "waipio"
+    list_dirs_exclude = []
+
     parser = argparse.ArgumentParser(description='Execute DFT patterns with EV100 Digshell program')
     parser.add_argument('-sn', dest='sn', type=str, help='sn of the part from its fuse dump')
     parser.add_argument('-log_dir', dest='log_dir', type=str,
@@ -254,7 +265,7 @@ def main():
         freq_mode = "SVSD1"
 
     # call digshell_exec()
-    digshell_exec(args.sn, args.log_dir, args.pat_type, freq_mode, args.dest)
+    digshell_exec(args.sn, args.log_dir, args.pat_type, freq_mode, args.dest, chip_version, list_dirs_exclude)
     print("main log_dir: " + args.log_dir)
 
 
