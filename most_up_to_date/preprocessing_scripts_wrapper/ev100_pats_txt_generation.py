@@ -193,8 +193,11 @@ class Generate_Pats():
                             if re.search(vector_type, root):
                                 if re.search(block, root):
                                     if df_conv_log['pattern_name'].str.contains(file).any():
-                                        do_file = os.path.join(root, file)
-                                        do_files.append(do_file)
+                                        for df_block in df_conv_log['block']:
+                                            if df_block + "\\device\\test" == root:
+                                              
+                                                do_file = os.path.join(root, file)
+                                                do_files.append(do_file)
         return do_files
 
     def pats_per_txt(self, do_files, lim):

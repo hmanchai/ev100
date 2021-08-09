@@ -70,7 +70,6 @@ def digshell_exec(sn_to_append, log_dir, pat_type, voltage_mode, dest, chip_vers
     else:
         print('\n****** No {} found.******'.format(exit_file))
 
-    # TODO Roshni: add functionality to select between projects so project-specific JSON file can be loaded
     jsonfile = r"C:\vi\pats_abs\go_" + chip_version.capitalize() + "_abs.json"
     tempfile = r"C:\AXITestPrograms\DigShell" + "\\" + chip_version + r"_temp.json"
     with open(jsonfile) as f:

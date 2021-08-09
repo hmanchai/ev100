@@ -1,13 +1,13 @@
 {
   "rev": "r2",
   "chip_version": "waipio",
-  "py_log_name": "py_conversion_20210720-125309.log",
+  "py_log_name": "py_conversion_all_r2.log",
   "py_log_path": "\\\\qctdfsrt\\prj\\vlsi\\vetch_pst\\atpg_cdp\\waipio\\r2\\py_log",
   "pattern_category": "INT|SAF",
   "vector_type": "PROD",
-  "dest": "G:\\dest_3",
+  "dest": "G:\\",
   "copy_zip": "n",
-  "convert_velocity": "y",
+  "convert_velocity": "n",
   "generate_pats": "y",
   "map_path": "G:\\waipio_vector_mapping.csv",
   "velocity_dft_cfg_path": "\\\\qctdfsrt\\prj\\vlsi\\vetch_pst\\c_weicya\\ev100\\seed_files\\velocity_cfg\\waipio\\waipio_WY_dft_universal_v1.cfg",
@@ -17,7 +17,7 @@
   "blocks": [
     "ATPG"
   ],
-  "log_name": "dest3",
+  "log_name": "all_r2p0p1",
   "conversion_log_csv_path": "\\\\qctdfsrt\\prj\\vlsi\\vetch_pst\\atpg_cdp\\waipio\\r2\\conversion_log",
   "lim": 1,
   "pin_group": "ALL_PINS",

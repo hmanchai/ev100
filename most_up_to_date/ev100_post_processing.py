@@ -364,12 +364,12 @@ def main():
     Post process results of runs for dft vectors and various freq modes
     """
     chip_version = 'Waipio'
-    base_dir = r"G:\atpg_cdp_velocity_8.1.1.2"
-    runs = ["dft_run_2021-08-03"]
+    base_dir = r"G:\r2p1_atpg_cdp"
+    runs = ["dft_run_2021-08-09"]
     #output_dir = r"G:\ATPG_CDP\pattern_execution\output_new"
     # base_dir = r"C:\Users\rpenmatc\OneDrive - Qualcomm\Desktop"
     # runs = ["dft_run_2021-07-01"]
-    output_dir = r"G:\atpg_cdp_velocity_8.1.1.2\pattern_execution\execution_dlog\dft_run_2021-08-03"
+    output_dir = r"G:\r2p1_atpg_cdp\pattern_execution\execution_dlog\dft_run_2021-08-09"
     post = PostProcess()
     post.dlog_csv_post_process(base_dir, runs, output_dir)
 
