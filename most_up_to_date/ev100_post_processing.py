@@ -184,6 +184,8 @@ class PostProcess():
         failing_vectors = []
         output_path = paths[0]
         df_map = pd.read_csv(output_path)
+        totals = df_map.loc[:,['DFT Type', 'freq mode']].pivot_table(index='DFT Type', columns='freq mode',
+                       aggfunc=len, fill_value=0)
         freq_modes = df_map['freq mode'].unique()
         dft_options = ["INT", "SAF", "TDF"]
         for freq_mode in freq_modes:
@@ -235,7 +237,7 @@ class PostProcess():
                                         columns=list(passing_rate.keys()), index=freq_modes)
         df_parts_passing["total #"] = total_chips
 
-        self.create_summary_tables(df_failing_vectors, df_parts_passing, df_passing_rate, freq_modes, output_dir)
+        self.create_summary_tables(df_failing_vectors, df_parts_passing, df_passing_rate, freq_modes, output_dir, totals)
 
         self.plot_multibar_graphs(freq_modes, output_dir, passing_rate, total_parts)
 
@@ -282,7 +284,7 @@ class PostProcess():
         output_plot = os.path.join(output_dir, title + '.jpg')
         plt.savefig(output_plot)
 
-    def create_summary_tables(self, df_failing_vectors, df_parts_passing, df_passing_rate, freq_modes, output_dir):
+    def create_summary_tables(self, df_failing_vectors, df_parts_passing, df_passing_rate, freq_modes, output_dir, totals):
         """
         write summary tables to csv
         """
@@ -301,6 +303,11 @@ class PostProcess():
             writer.writerow("")
             writer.writerow(["# of Vectors Failed by Part"])
         df_failing_vectors.to_csv(summary_data, index=False, sep=',', header=True, mode='a')
+        with open(summary_data, 'a', newline="") as f:
+            writer = csv.writer(f)
+            writer.writerow("")
+            writer.writerow(["Vector Category Totals"])
+        totals.to_csv(summary_data, index=True, sep=',', header=True, mode='a')
 
     def add_labels(self, data, pos, percent=False):
         """
@@ -369,10 +376,9 @@ def main():
     #output_dir = r"G:\ATPG_CDP\pattern_execution\output_new"
     # base_dir = r"C:\Users\rpenmatc\OneDrive - Qualcomm\Desktop"
     # runs = ["dft_run_2021-07-01"]
-    output_dir = r"G:\r2p1_atpg_cdp\pattern_execution\execution_dlog\dft_run_2021-08-09"
+    output_dir = r"C:\Users\rpenmatc\OneDrive - Qualcomm\Desktop\output_new"
     post = PostProcess()
-    post.dlog_csv_post_process(base_dir, runs, output_dir)
-
+   # post.dlog_csv_post_process(base_dir, runs, output_dir)
     post.all_data_compiled(output_dir)
     #post.tdf_shmoo_graph(r"C:\Users\rpenmatc\OneDrive - Qualcomm\Desktop\data", output_dir)
 
