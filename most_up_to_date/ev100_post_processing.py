@@ -33,15 +33,16 @@ class PostProcess():
         :param exclude_chips: list str
             sn of chips to exclude from post processing
         """
+        pattern_names = collections.OrderedDict()
+        sn_list = []
+        sn_files = {}
+        pattern_index = 0
+        index = 0
         for run in runs:
             # csv_path = os.path.join(dlog_dir, '*.csv')
             dlog_dir = os.path.join(base_dir, "pattern_execution", "execution_dlog", run, 'dlog')
-            pattern_names = collections.OrderedDict()
-            pattern_index = 0
-
             list_results = []
-            sn_list = []
-            sn_files = {}
+
             #path = glob.glob(dlog_dir + "\\*\\*\\")
 
             # freq_mode = re.search("(.*)(\\\)(.*)(\\\)$", path[0]).group(3)
@@ -54,49 +55,100 @@ class PostProcess():
                     sn_dir = os.path.join(dlog_dir, d)
                     csv_path = sn_dir + '\\' + '*.csv'
                     list_all_csv = glob.glob(csv_path)
-                    sn_files[d] = list_all_csv
-                    sn_list.append(d)
+                    sn_files[d + " " + run] = list_all_csv
+                    sn_list.append(d + " " + run)
             # csv_path = "E:\johnny\dlog_csv_debugging\int_and_saf.csv"
-            sn_df = pd.DataFrame(columns=sn_list)
-            for sn, paths in sn_files.items():
-                for path in paths:
-                    dlog_output = pd.read_csv(path)
-                    pattern = dlog_output.at[0, 'PatternName']
-                    if pattern in pattern_names:
-                        index = pattern_names.get(pattern)
+        sn_df = pd.DataFrame(columns=sn_list)
+
+        for sn, paths in sn_files.items():
+            print(sn)
+            for path in paths:
+                dlog_output = pd.read_csv(path)
+                pattern = dlog_output.at[0, 'PatternName']
+                if pattern in pattern_names:
+                    index = pattern_names.get(pattern)
+
+                    if pd.isnull(sn_df.loc[index, sn]):
                         if int(dlog_output['Failures']) != 0:
                             sn_df.at[index, sn] = 'F'
+                        else:
+                            sn_df.at[index, sn] = 'P'
                     else:
-                        pattern_names[pattern] = pattern_index
-                        if int(dlog_output.at[0, 'Failures']) != 0:
-                            sn_df.at[pattern_index, sn] = 'F'
-                        if int(dlog_output.at[0, 'PatternRunTime']) > 16:
-                            sn_df.at[pattern_index, sn] = 'T'
-                        pattern_index += 1
+                        # cell_value = sn_df.loc[index, sn]
+                        # sn_df.at[index, sn] = cell_value + 'F'
+                        if pattern+"_2" in pattern_names:
+                            if pd.isnull(sn_df.loc[index, sn]):
+                                if int(dlog_output['Failures']) != 0:
+                                    sn_df.at[index, sn] = 'F'
+                                else:
+                                    sn_df.at[index, sn] = 'P'
+                            elif pattern+"_3" in pattern_names:
+                                if pd.isnull(sn_df.loc[index, sn]):
+                                    if int(dlog_output['Failures']) != 0:
+                                        sn_df.at[index, sn] = 'F'
+                                    else:
+                                        sn_df.at[index, sn] = 'P'
+                            else:
+                                pattern_names[pattern + "_3"] = pattern_index
+                                if int(dlog_output.at[0, 'Failures']) != 0:
+                                    sn_df.at[pattern_index, sn] = 'F'
+                                if int(dlog_output.at[0, 'Failures']) == 0:
+                                    sn_df.at[pattern_index, sn] = 'P'
+                                if int(dlog_output.at[0, 'PatternRunTime']) > 16:
+                                    sn_df.at[pattern_index, sn] = 'T'
+                                pattern_index += 1
+                        else:
+                            pattern_names[pattern + "_2"] = pattern_index
+                            if int(dlog_output.at[0, 'Failures']) != 0:
+                                sn_df.at[pattern_index, sn] = 'F'
+                            if int(dlog_output.at[0, 'Failures']) == 0:
+                                sn_df.at[pattern_index, sn] = 'P'
+                            if int(dlog_output.at[0, 'PatternRunTime']) > 16:
+                                sn_df.at[pattern_index, sn] = 'T'
+                            pattern_index += 1
 
-            pattern_rows = list(pattern_names.items())
-            df_data = pd.DataFrame(pattern_rows, columns=["Pattern Name", "Index"])
-            regex = "(tk_atpg_)(.*)"
-            df_data["DFT Type"] = df_data.apply(
-                lambda x: re.search(regex, x["Pattern Name"]).group(2).split("_")[0].upper(),
-                axis=1)
-            df_data["freq mode"] = df_data.apply(lambda x: "SVS" if re.search("svs_", x["Pattern Name"])
-            else "TUR" if re.search("tur_", x["Pattern Name"])
-            else "SVSD1" if re.search("svsd1_", x["Pattern Name"])
-            else "NOM", axis=1)
 
-            df_data["# failing"] = sn_df.notnull().sum(axis=1)
-            df_data["# failing"].fillna("0", inplace=True)
-            df_data = pd.concat([df_data, sn_df], axis=1)
-            df_data.pop('Index')
-            output_file = os.path.join(output_dir, "postprocess_failures.csv")
-            if os.path.exists(output_file):
-                df_data.to_csv(output_file, index=False, sep=',', header=False, mode='a')
-            else:
-                df_data.to_csv(output_file, index=False, sep=',', header=True, mode='w')
-        final = pd.read_csv(output_file)
-        final = final.drop_duplicates(subset=['Pattern Name'], keep='first')
-        final.to_csv(output_file, index=False, sep=',', header=True, mode='w')
+                else:
+                    pattern_names[pattern] = pattern_index
+
+                    if int(dlog_output.at[0, 'Failures']) != 0:
+                        sn_df.at[pattern_index, sn] = 'F'
+                    if int(dlog_output.at[0, 'Failures']) == 0:
+                        sn_df.at[pattern_index, sn] = 'P'
+                    if int(dlog_output.at[0, 'PatternRunTime']) > 16:
+                        sn_df.at[pattern_index, sn] = 'T'
+
+                    pattern_index += 1
+
+        sn_df = sn_df.replace(['P'], np.nan)
+        pattern_rows = list(pattern_names.items())
+        df_data = pd.DataFrame(pattern_rows, columns=["Pattern Name", "Index"])
+        regex = "(tk_atpg_)(.*)"
+        df_data["DFT Type"] = df_data.apply(
+            lambda x: re.search(regex, x["Pattern Name"]).group(2).split("_")[0].upper(),
+            axis=1)
+        df_data["freq mode"] = df_data.apply(lambda x: "SVS" if re.search("svs_", x["Pattern Name"])
+        else "TUR" if re.search("tur_", x["Pattern Name"])
+        else "SVSD1" if re.search("svsd1_", x["Pattern Name"])
+        else "NOM", axis=1)
+
+        df_data["# failing"] = sn_df.notnull().sum(axis=1)
+        df_data["# failing"].fillna("0", inplace=True)
+        df_data = pd.concat([df_data, sn_df], axis=1)
+        df_data.pop('Index')
+        output_file = os.path.join(output_dir, "postprocess_failures.csv")
+        # if os.path.exists(output_file):
+        #     print("append")
+        #     print(df_data)
+        #     df_data.to_csv(output_file, index=False, sep=',', header=False, mode='a')
+        # else:
+        #     print(df_data)
+        #     df_data.to_csv(output_file, index=False, sep=',', header=True, mode='w')
+        print(df_data)
+        df_data.to_csv(output_file, index=False, sep=',', header=True, mode='w')
+        # final = pd.read_csv(output_file)
+        # #final = final.drop_duplicates(subset=['Pattern Name'], keep='first')
+        # final.to_csv(output_file, index=False, sep=',', header=True, mode='w')
 
     def create_folder(self, dir):
         """
@@ -184,17 +236,27 @@ class PostProcess():
         failing_vectors = []
         output_path = paths[0]
         df_map = pd.read_csv(output_path)
+
         totals = df_map.loc[:,['DFT Type', 'freq mode']].pivot_table(index='DFT Type', columns='freq mode',
                        aggfunc=len, fill_value=0)
         freq_modes = df_map['freq mode'].unique()
         dft_options = ["INT", "SAF", "TDF"]
         for freq_mode in freq_modes:
-            df_data = df_map[df_map["freq mode"].str.match(freq_mode)]
+            filter = df_map["freq mode"].str.match(freq_mode)
+            filter = filter.dropna(axis=0, how='all')
+            df_map = df_map.dropna(axis=0, how='all')
+            pd.set_option('display.max_rows', None)
+            pd.set_option('display.max_columns', None)
+            pd.set_option('display.width', None)
+            pd.set_option('display.max_colwidth', -1)
+            print(filter)
+            print(df_map)
+            df_data = df_map[filter]
+
             for dft_type in passing_rate.keys():
                 total_chips = 0
                 passing = 0
                 df_vector_type = df_data[df_data['DFT Type'].str.match(dft_type.upper())]
-
                 df_vector_type.pop('Pattern Name')
                 df_vector_type.pop('DFT Type')
                 df_vector_type.pop('freq mode')
@@ -371,14 +433,15 @@ def main():
     Post process results of runs for dft vectors and various freq modes
     """
     chip_version = 'Waipio'
-    base_dir = r"G:\r2p1_atpg_cdp"
-    runs = ["dft_run_2021-08-09"]
+    base_dir = r"G:\r2_patterns"
+    runs = ["dft_run_2021-08-10", "dft_run_2021-08-11"]
     #output_dir = r"G:\ATPG_CDP\pattern_execution\output_new"
     # base_dir = r"C:\Users\rpenmatc\OneDrive - Qualcomm\Desktop"
     # runs = ["dft_run_2021-07-01"]
-    output_dir = r"C:\Users\rpenmatc\OneDrive - Qualcomm\Desktop\output_new"
+    output_dir = r"G:\r2_patterns\pattern_execution\execution_dlog\dft_run_2021-08-10"
     post = PostProcess()
-   # post.dlog_csv_post_process(base_dir, runs, output_dir)
+    exclude_chips = ["sys2"]
+    post.dlog_csv_post_process(base_dir, runs, output_dir, exclude_chips)
     post.all_data_compiled(output_dir)
     #post.tdf_shmoo_graph(r"C:\Users\rpenmatc\OneDrive - Qualcomm\Desktop\data", output_dir)
 
