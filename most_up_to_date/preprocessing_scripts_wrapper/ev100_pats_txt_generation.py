@@ -152,7 +152,9 @@ class Generate_Pats():
         if enable_cyc_cnt:
 
             try:
-                filter = df_conv_log['pattern_name'] == do_file_name
+                path = re.search("(.*)(\\\)(.*)(\\\)(.*)(\\\)(.*)$", do_file).group(1)
+
+                filter = df_conv_log['block'] == path
                 cyc_cnt = df_conv_log.loc[filter, 'extracted_cycle_count'].values[0]
 
             except Exception as e:
