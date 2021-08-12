@@ -117,13 +117,11 @@ class wrapper():
         # dir_pat = os.path.join(dir_pat, self.chip_version, version_num)
         preprocess = ev100_pats_txt_generation.Generate_Pats(conversion_log_csv_path, self.logger)
         pattern_categories = self.pattern_category.split("|")
-        for block in blocks:
-            # dir_pat = os.path.join(dir_pat, block)
-            for pat_cat in pattern_categories:
-                vector_types = self.vector_type.split("|")
-                for type in vector_types:
-                    preprocess.generate_pats_txt(pat_cat, type, dir_pat, dir_exec, log_name, lim, list_dirs_exclude,
-                                                 pin_group, enable_cyc_cnt, block, freq_modes)
+        for pat_cat in pattern_categories:
+            vector_types = self.vector_type.split("|")
+            for type in vector_types:
+                preprocess.generate_pats_txt(pat_cat, type, dir_pat, dir_exec, log_name, lim, list_dirs_exclude,
+                                             pin_group, enable_cyc_cnt, freq_modes)
 
 
 def main():
