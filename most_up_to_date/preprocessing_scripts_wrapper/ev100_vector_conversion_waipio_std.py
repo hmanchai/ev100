@@ -408,10 +408,12 @@ class Conversion:
                 if pattern_category.lower() == 'tdf':
                     # grab pattern name from map file
                     df_map = pd.read_csv(self.map_path)
+                    filter = (hdr_name == df_map['header'])
+
                     # for TDF, header alone is sufficient to identify pattern name in map file
-                    pattern_name = df_map.loc[df_map['header'] == hdr_name, 'Pattern'].values[0]
+                    pattern_name = df_map.loc[filter, 'Vector'].values[0]
                     # add BURST section to the end of CFG file; NOTE: header needs to be listed above payloads!
-                    list_lines = ["\nBURST  " + pattern_name, "\n  " + hdr_name] + list_pl_name + ["\nEND BURST"]
+                    list_lines = ["\nBURST  " + "MBURST_" + pattern_name + "_XMD", "\n  " + hdr_name] + list_pl_name + ["\nEND BURST"]
                 elif pattern_category.lower() in ['int', 'saf']:
                     df_map = pd.read_csv(self.map_path)
 

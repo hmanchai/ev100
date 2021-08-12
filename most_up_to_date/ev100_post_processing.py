@@ -51,23 +51,30 @@ class PostProcess():
             self.create_folder(output_dir)
 
             for d in os.listdir(dlog_dir):
-                if d not in exclude_chips:
+
+                exclude = True
+                for exclude_chip in exclude_chips:
+                    if d == exclude_chip.split(" ")[1] and run == exclude_chip.split(" ")[0]:
+                        exclude = False
+
+                if exclude:
                     sn_dir = os.path.join(dlog_dir, d)
                     csv_path = sn_dir + '\\' + '*.csv'
                     list_all_csv = glob.glob(csv_path)
                     sn_files[d + " " + run] = list_all_csv
-                    sn_list.append(d + " " + run)
+                    if d not in sn_list:
+                        sn_list.append(d)
             # csv_path = "E:\johnny\dlog_csv_debugging\int_and_saf.csv"
+
         sn_df = pd.DataFrame(columns=sn_list)
 
         for sn, paths in sn_files.items():
-            print(sn)
+            sn = sn.split(" ")[0]
             for path in paths:
                 dlog_output = pd.read_csv(path)
                 pattern = dlog_output.at[0, 'PatternName']
                 if pattern in pattern_names:
                     index = pattern_names.get(pattern)
-
                     if pd.isnull(sn_df.loc[index, sn]):
                         if int(dlog_output['Failures']) != 0:
                             sn_df.at[index, sn] = 'F'
@@ -120,7 +127,6 @@ class PostProcess():
 
                     pattern_index += 1
 
-        sn_df = sn_df.replace(['P'], np.nan)
         pattern_rows = list(pattern_names.items())
         df_data = pd.DataFrame(pattern_rows, columns=["Pattern Name", "Index"])
         regex = "(tk_atpg_)(.*)"
@@ -132,8 +138,18 @@ class PostProcess():
         else "SVSD1" if re.search("svsd1_", x["Pattern Name"])
         else "NOM", axis=1)
 
-        df_data["# failing"] = sn_df.notnull().sum(axis=1)
+       # df_data["# failing"] = sn_df.notnull().sum(axis=1)
+        sn_df.replace('F', 1, inplace = True)
+        sn_df.replace('P', 0, inplace=True)
+        pd.set_option('display.max_rows', None)
+        pd.set_option('display.max_columns', None)
+        pd.set_option('display.width', None)
+        pd.set_option('display.max_colwidth', -1)
+        print(sn_df)
+        df_data['# failing'] = sn_df.sum(axis=1)
         df_data["# failing"].fillna("0", inplace=True)
+        sn_df.replace(1, "F", inplace=True)
+        sn_df.replace(0, "P", inplace=True)
         df_data = pd.concat([df_data, sn_df], axis=1)
         df_data.pop('Index')
         output_file = os.path.join(output_dir, "postprocess_failures.csv")
@@ -147,7 +163,7 @@ class PostProcess():
         print(df_data)
         df_data.to_csv(output_file, index=False, sep=',', header=True, mode='w')
         # final = pd.read_csv(output_file)
-        # #final = final.drop_duplicates(subset=['Pattern Name'], keep='first')
+        # final = final.drop_duplicates(subset=['Pattern Name'], keep='first')
         # final.to_csv(output_file, index=False, sep=',', header=True, mode='w')
 
     def create_folder(self, dir):
@@ -245,12 +261,7 @@ class PostProcess():
             filter = df_map["freq mode"].str.match(freq_mode)
             filter = filter.dropna(axis=0, how='all')
             df_map = df_map.dropna(axis=0, how='all')
-            pd.set_option('display.max_rows', None)
-            pd.set_option('display.max_columns', None)
-            pd.set_option('display.width', None)
-            pd.set_option('display.max_colwidth', -1)
-            print(filter)
-            print(df_map)
+
             df_data = df_map[filter]
 
             for dft_type in passing_rate.keys():
@@ -440,7 +451,7 @@ def main():
     # runs = ["dft_run_2021-07-01"]
     output_dir = r"G:\r2_patterns\pattern_execution\execution_dlog\dft_run_2021-08-10"
     post = PostProcess()
-    exclude_chips = ["sys2"]
+    exclude_chips = ["dft_run_2021-08-10 sys2", "dft_run_2021-08-11 0x0x6D01A31B", "dft_run_2021-08-11 0x0x687B65C1", "dft_run_2021-08-11 0x0xA4346FFC", "dft_run_2021-08-11 0x0x69B2B779"]
     post.dlog_csv_post_process(base_dir, runs, output_dir, exclude_chips)
     post.all_data_compiled(output_dir)
     #post.tdf_shmoo_graph(r"C:\Users\rpenmatc\OneDrive - Qualcomm\Desktop\data", output_dir)
