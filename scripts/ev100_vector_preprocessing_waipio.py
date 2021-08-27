@@ -13,7 +13,7 @@ from pathlib import Path
 ## mapping files ##
 #waipio
 # int_saf_map_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\c_weicya\ev100\seed_files\map_files\waipio\waipio_v1_map_test_p1.csv"
-int_saf_map_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\c_weicya\ev100\seed_files\map_files\waipio\waipio_v1_map_052621_demo.csv"
+map_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\c_weicya\ev100\seed_files\map_files\waipio\waipio_v1_map_052621_demo.csv"
 
 ## source path for patterns ##
 #waipio
@@ -58,7 +58,7 @@ def load_filter_map(pattern_category, vector_type):
         vector_type_col = 'Vector Type'
         map_path = tdf_map_path
     elif pattern_category in ('SAF', 'INT'):
-        map_path = int_saf_map_path
+        map_path = map_path
         vector_type_col = 'Header Vector type'
 
     df_map_original = pd.read_csv(map_path)

@@ -12,7 +12,7 @@ import sys
 # import subprocess
 import pandas as pd
 import fnmatch
-from ev100_dlog_postprocess import dlog_csv_post_process
+#from ev100_dlog_postprocess import dlog_csv_post_process
 # from ev100_vector_conversion_lahaina import sorted_alphanumeric
 
 
@@ -20,11 +20,11 @@ from ev100_dlog_postprocess import dlog_csv_post_process
 proj = 'waipio'
 #test_dir = r'F:\ATPG_CDP\Lahaina\r2\pattern_execution\SAF_120320_10pat_topoff_cgc_sr_only'
 #test_dir = r'F:\demo\demo_test_022421'
-test_dir = r'F:\ATPG_CDP\Waipio\r1\manual_test\pattern_exec'
+test_dir = r'G:\ATPG_CDP\pattern_execution\pattern_list\SVS'
 #test_dir = r'F:\ATPG_CDP\Lahaina\r2\pattern_execution\Pattern_list\042921_tdf_test\svs'
 #csv_output_folder = '021121_G745board_0x826CFB17'
-csv_output_folder = '051921_waipio_test'
-summary_dlog = 'manual_test'
+csv_output_folder = '061621_waipio_int_saf_svs'
+summary_dlog = 'all_comp_2_run_2'
 #summary_dlog = 'waipio_0x0D9BA4C6_pattern_20ns_1'
 list_dirs_exclude = []
 ##################################

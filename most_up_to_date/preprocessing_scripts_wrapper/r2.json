@@ -1,0 +1,34 @@
+{
+  "rev": "r2",
+  "chip_version": "waipio",
+  "py_log_name": "py_conversion_all_r2.log",
+  "py_log_path": "\\\\qctdfsrt\\prj\\vlsi\\vetch_pst\\atpg_cdp\\waipio\\r2\\py_log",
+  "pattern_category": "INT|SAF",
+  "vector_type": "PROD",
+  "dest": "G:\\",
+  "copy_zip": "n",
+  "convert_velocity": "n",
+  "generate_pats": "y",
+  "map_path": "G:\\waipio_vector_mapping.csv",
+  "velocity_dft_cfg_path": "\\\\qctdfsrt\\prj\\vlsi\\vetch_pst\\c_weicya\\ev100\\seed_files\\velocity_cfg\\waipio\\waipio_WY_dft_universal_v1.cfg",
+  "patch_timesets_path": "\\\\qctdfsrt\\prj\\vlsi\\vetch_pst\\c_weicya\\ev100\\seed_files\\patch_files\\waipio\\patch_timesets.txt",
+  "patch_timesets_50mhz_path": "\\\\qctdfsrt\\prj\\vlsi\\vetch_pst\\c_weicya\\ev100\\seed_files\\patch_files\\lahaina\\patch_timesets_50MHz.txt",
+  "enable_del_zip": false,
+  "blocks": [
+    "ATPG"
+  ],
+  "log_name": "all_r2p0p1",
+  "conversion_log_csv_path": "\\\\qctdfsrt\\prj\\vlsi\\vetch_pst\\atpg_cdp\\waipio\\r2\\conversion_log",
+  "lim": 1,
+  "pin_group": "ALL_PINS",
+  "freq_modes": [
+    "SVS",
+    "NOM",
+    "TUR",
+    "SVSD1"
+  ],
+  "enable_cyc_cnt": 1,
+  "list_dirs_exclude": [
+    ""
+  ]
+}

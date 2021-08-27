@@ -17,25 +17,29 @@ from pathlib import Path
 
 from ev100_vector_preprocessing_lahaina import create_folder, load_filter_map
 
-
+rev = 'r1'
+chip_version = 'waipio'
 # global variable
-py_log_name = 'TDF_PROD_TOP_conversion_020821.log'
+updated_data_time = time.strftime("%Y%m%d-%H%M%S")
+py_log_name = 'py_conversion_' + updated_data_time + '_test.log'
 
-## map files ##
-map_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\c_weicya\ev100\seed_files\map_files\lahaina\Lahaina_V2p1_TDF_mapping_sheet.csv"
-map_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\c_weicya\ev100\seed_files\map_files\lahaina\Lahaina_R2p1_ATPG_mapping.csv"
+## mapping files ##
+map_path = ""
+# tdf_map_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\c_weicya\ev100\seed_files\map_files\lahaina\Lahaina_V2p1_TDF_mapping_sheet.csv"
+map_path = r"C:\Users\jianingz\Desktop\atpg_block_waipio.csv"
 
 ## seed files ##
-velocity_dft_cfg_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\c_weicya\ev100\seed_files\velocity_cfg\lahaina\lahaina_WCY_dft_universal.cfg"
-patch_timesets_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\c_weicya\ev100\seed_files\patch_files\lahaina\patch_timesets.txt"
-patch_timesets_50mhz_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\c_weicya\ev100\seed_files\patch_files\lahaina\patch_timesets_50MHz.txt"
+velocity_dft_cfg_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\c_weicya\ev100\seed_files\velocity_cfg\waipio\waipio_WY_dft_universal_v1.cfg"
+patch_timesets_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\c_weicya\ev100\seed_files\patch_files\waipio\patch_timesets.txt"
+patch_timesets_50mhz_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\c_weicya\ev100\seed_files\patch_files\lahaina\patch_timesets_50MHz.txt" #TODO Roshni: need to update after waipio timesets methdology is avaialbe from TEV
 
 ## paths to log files ##
-conversion_log_csv_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\atpg_cdp\lahaina\r2\conversion_log"
-py_log_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\atpg_cdp\lahaina\r2\py_log"
+
+py_log_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\atpg_cdp" + "\\" + chip_version + "\\" + rev + r"\py_log"
+conversion_log_csv_path = r"\\qctdfsrt\prj\vlsi\vetch_pst\atpg_cdp" + "\\" + chip_version + "\\" + rev + r"\conversion_log"
 
 ## path to network drive ##
-net_loc = r'\\qctdfsrt\prj\vlsi\vetch_pst\atpg_cdp\lahaina\r2'
+net_loc = r'\\qctdfsrt\prj\vlsi\vetch_pst\atpg_cdp\waipio\r1'
 
 # set up logger
 logger = logging.getLogger(__name__)
@@ -85,56 +89,56 @@ def copy_all_zip(pattern_category, vector_type, local_loc):
         elapsed = end - start
         logger.info(f'**** Total time elapsed for file transfer: {timedelta(seconds=elapsed)} ****')
 
-def copy_zip(pattern_category, vector_type, local_loc, dir_level, dir_name):
-    """
-    Copy zip files from an intermediate location (e.g. network drive) to local PC with user to determine which level of dir to copy
-
-    :param pattern_category: str
-        choices are INT, SAF and TDF
-    :param vector_type: str
-        choice of vector type has PROD or RMA. As project evolves, more choices might come
-    :param local_loc: str
-        local dir to copy zip files to
-    :param dir_level: str
-        the level of dir, which is determined by the level of classification in mapping file, to copy zip files from
-    """
-    # TODO: change for a better design
-
-    # pattern category: 'INT', 'SAF', 'TDF'
-    dir_pattern_type = os.path.join(net_loc, pattern_category)
-    # vector_type: 'PROD','RMA'
-    dir_vector_type = os.path.join(dir_pattern_type,vector_type)
-    # block = 'TDF_ATPG_CPU'
-    dir_block = os.path.join(dir_vector_type,dir_name)
-    # domain = 'apssf139f254'
-    dir_domain = os.path.join(dir_block,dir_name)
-
-    dict_dir_level = {'pattern_type': dir_pattern_type, 'vector_type': dir_vector_type, 'block': dir_block, 'domain': dir_domain}
-    dir_orig = dict_dir_level[dir_level]
-
-    local_dir = os.path.join(local_loc,dir_name)
-    start = time.time()
-    logger.info(f'**** File transfer starts for {pattern_category} {vector_type}: src:{dir_orig}  dest:{local_dir} ****')
-    # print('File copy ongoing.....')
-    # shutil.copytree(dir_orig, local_dir)
-
-    try:
-        shutil.copytree(dir_orig, local_dir)
-    except FileExistsError:
-        logger.exception(f'Error! Please check the content in this existing path :{dir_orig}.')
-    else:
-        end = time.time()
-        # print('File copy completed')
-        elapsed = end - start
-        logger.info(f'**** Total time elapsed for file transfer: {timedelta(seconds=elapsed)} ****')
-
-    #TODO: add count of files copied
+# def copy_zip(pattern_category, vector_type, local_loc, dir_level, dir_name):
+#     """
+#     Copy zip files from an intermediate location (e.g. network drive) to local PC with user to determine which level of dir to copy
+#
+#     :param pattern_category: str
+#         choices are INT, SAF and TDF
+#     :param vector_type: str
+#         choice of vector type has PROD or RMA. As project evolves, more choices might come
+#     :param local_loc: str
+#         local dir to copy zip files to
+#     :param dir_level: str
+#         the level of dir, which is determined by the level of classification in mapping file, to copy zip files from
+#     :param dir_name: str
+#
+#     """
+#
+#     # pattern category: 'INT', 'SAF', 'TDF'
+#     dir_pattern_type = os.path.join(net_loc, pattern_category)
+#     # vector_type: 'PROD','RMA'
+#     dir_vector_type = os.path.join(dir_pattern_type,vector_type)
+#     # block = 'TDF_ATPG_CPU' for TDF
+#     dir_block = os.path.join(dir_vector_type,dir_name)
+#     # domain = 'apssf139f254'
+#     dir_domain = os.path.join(dir_block,dir_name)
+#
+#     dict_dir_level = {'pattern_type': dir_pattern_type, 'vector_type': dir_vector_type, 'block': dir_block, 'domain': dir_domain}
+#     dir_orig = dict_dir_level[dir_level]
+#
+#     local_dir = os.path.join(local_loc,dir_name)
+#     start = time.time()
+#     logger.info(f'**** File transfer starts for {pattern_category} {vector_type}: src:{dir_orig}  dest:{local_dir} ****')
+#     # print('File copy ongoing.....')
+#     # shutil.copytree(dir_orig, local_dir)
+#
+#     try:
+#         shutil.copytree(dir_orig, local_dir)
+#     except FileExistsError:
+#         logger.exception(f'Error! Please check the content in this existing path :{dir_orig}.')
+#     else:
+#         end = time.time()
+#         # print('File copy completed')
+#         elapsed = end - start
+#         logger.info(f'**** Total time elapsed for file transfer: {timedelta(seconds=elapsed)} ****')
+#
 
 
 def traverse_levels(par_dir,pattern_category,vector_type, log_name, enable_del_zip, list_dirs_exclude=[]):
     """
     The central function to execute conversion related actions across all levels of dir
-    par_dir can be any level of dir to start
+    par_dir can be any level of dir as the entry point
 
     :param par_dir: str
         dir to start traverse from top down
@@ -174,6 +178,7 @@ def traverse_levels(par_dir,pattern_category,vector_type, log_name, enable_del_z
                 # call processing func
                 start_loop = time.time()
                 try:
+                    # perform all conversion related actions
                     convert_all_pats(root, pattern_category, vector_type, log_name, enable_del_zip)
                 except Exception:
                     logger.exception('Error! Conversion related actions not finished completely.')
@@ -185,60 +190,23 @@ def traverse_levels(par_dir,pattern_category,vector_type, log_name, enable_del_z
     elapse = end - start
     logger.info(f'====>> Total time elapsed for entire process: {timedelta(seconds=elapse)} <<====\n')
 
+
 def convert_all_pats(path_stil_files, pattern_category, vector_type, log_name, enable_del_zip):
-    """run all successive conversion related actions"""
-    # copy Velocity CFG file to the specified dir
-    copy_cfg(path_stil_files, pattern_category)
-    # # modify Velocity CFG to add BURST block
-    modify_cfg(path_stil_files, pattern_category)
-    # convert STIL to DP, func has internal logger and timer
-    conv_result = convert_stil_files(path_stil_files,pattern_category)
-    if not conv_result:
-        logger.error('Error! Conversion fails, so no further steps will be executed.')
-    else:
-        try:
-            # # screen corners to determine if period adjustment is needed
-            # change_period = screen_mode(path_stil_files)
-            # if change_period:
-            #     new_period = 16
-            #     period_initial = change_timing(path_stil_files,new_period)
-            # else:
-            #     new_period = 'na'
-            #     period_initial = get_timing(path_stil_files)
+    """
+    perform all conversion related actions.
 
-            # FOR NOW, for TDF patterns, change timing to 16ns regardless
-            if pattern_category.lower() == 'tdf':
-                new_period = 16
-            # for INT, SAF, change timing to 20ns (50MHz)
-            elif pattern_category.lower() in ['int','saf']:
-                new_period = 20
-            change_period = True
-            period_initial = change_timing(path_stil_files, new_period)
+    :param path_stil_files: str
+        directory to STIL patterns
+    :param pattern_category: str
+        choices are INT, SAF and TDF
+    :param vector_type: str
+        choice of vector type has PROD or RMA. As project evolves, more choices might come
+    :param log_name: str
+        conversion log name (w/o .csv extension)
+    :param enable_del_zip: bool
+        if True, delete zip files after conversion
+    """
 
-            # extract cycle count from DP
-            cyc_cnt = extract_cycle_count(path_stil_files)
-            logger.info(f'Extracted cycle count is {cyc_cnt}')
-            # add pingroup info to .h file
-            patch_timesets_header(path_stil_files, pattern_category)
-            # remove extra pingroups from slc combination
-            remove_extra_pingroup(path_stil_files)
-            # compile DP to DO, func has internal logger and timer
-            compile_err, do_file = compile_do_files(path_stil_files)
-            # log final DO pattern info to csv
-            log_conversion_info(path_stil_files,pattern_category,vector_type,compile_err,do_file,change_period,period_initial,new_period,cyc_cnt,log_name)
-
-        except Exception:
-            logger.exception('Error! Conversion related actions not finished completely.')
-        else:
-            if not compile_err: # in case compilation fails but no traceback error returned
-                logger.info('All conversion related actions completed.')
-            if enable_del_zip:
-                # delete ZIP
-                del_zip(path_stil_files)
-
-# TODO: change back to original later
-def convert_all_pats_original(path_stil_files, pattern_category, vector_type, log_name, enable_del_zip):
-    """run all successive conversion related actions"""
     # unzip STIL files, func has internal logger
     unzip_result = unzip_n_rename(path_stil_files)
     if not unzip_result:
@@ -276,7 +244,8 @@ def convert_all_pats_original(path_stil_files, pattern_category, vector_type, lo
                 cyc_cnt = extract_cycle_count(path_stil_files)
                 logger.info(f'Extracted cycle count is {cyc_cnt}')
                 # add pingroup info to .h file
-                patch_timesets_header(path_stil_files, pattern_category)
+                # TODO: temporarily comment out for demo on 5/26/21 until waipio patch files are fully prepared
+                #patch_timesets_header(path_stil_files, pattern_category)
                 # remove extra pingroups from slc combination
                 remove_extra_pingroup(path_stil_files)
                 # compile DP to DO, func has internal logger and timer
@@ -293,6 +262,12 @@ def convert_all_pats_original(path_stil_files, pattern_category, vector_type, lo
                     # delete ZIP
                     del_zip(path_stil_files)
 def temp_recompile(path_stil_files):
+    """
+    For temporary use only: to remoe extra pin groups and re-compile patterns
+
+    :param path_stil_files: str
+        directory to STIL patterns
+    """
     try:
         remove_extra_pingroup(path_stil_files)
         compile_err, do_file = compile_do_files(path_stil_files)
@@ -306,6 +281,11 @@ def unzip_n_rename(path_stil_files):
     """
     unzip .gz files and match .stil file names to .gz file names
     NOTE: double unzipping is fine, and will just overwrite the previous unzipped files
+
+    :param path_stil_files: str
+        directory to STIL patterns
+    :return: bool
+        1 if successful, 0 in case of errors
     """
     try:
         # grab names of all .gz zip files and save to a list
@@ -335,28 +315,53 @@ def unzip_n_rename(path_stil_files):
         return 0
 
 def copy_cfg(dest_dir, pattern_category):
-    """copy seed CFG file to pattern directory"""
+    """
+    copy seed CFG file to pattern directory
+
+    :param dest_dir: str
+        destination directory to copy CFG file to
+    :param pattern_category: str
+        choices are INT, SAF and TDF
+    """
     if pattern_category.lower() in ('int','saf','tdf'):
         shutil.copy(velocity_dft_cfg_path, dest_dir)
     elif pattern_category.lower() == 'mbist':
         shutil.copy(velocity_dft_cfg_path, dest_dir) #TODO: change to mbist CFG
 
 def generate_cfg_path(path_stil_files,pattern):
-    """generate path to cfg file in each individual pattern folder"""
+    """
+    generate path to cfg file in each individual pattern folder
+
+    :param path_stil_files: str
+        directory to STIL patterns
+    :param pattern: str
+        current choices are INT,SAF,TDF and MBIST
+    :return: str
+        generated directory to cfg file
+    """
+
     if pattern.lower() in ('int','saf','tdf'):
-        cfg = os.path.join(path_stil_files, "lahaina_WCY_dft_universal.cfg")
+        # cfg = os.path.join(path_stil_files, "lahaina_WCY_dft_universal.cfg")
+        cfg = os.path.join(path_stil_files, "waipio_WY_dft_universal_v1.cfg") #TODO Roshni: replace hardcoding of cfg file name
     elif pattern.lower() == 'mbist':
         cfg = os.path.join(path_stil_files, "MBIST.cfg")
     return cfg
 
 def sorted_alphanumeric(data):
-    """sort alphanumerically. Developed to order payload slice numbers correctly, as regular sort didn't work"""
+    """sort alphanumerically. Developed to order TDF payload slice numbers correctly, as regular sort didn't work"""
     convert = lambda text: int(text) if text.isdigit() else text.lower()
     alphanum_key = lambda key: [ convert(c) for c in re.split('([0-9]+)', key) ]
     return sorted(data, key=alphanum_key)
 
 def modify_cfg(path_stil_files, pattern_category):
-    """modify velocity cfg file by adding BURST section"""
+    """
+    modify velocity cfg file by adding BURST section
+
+    :param path_stil_files: str
+        directory to STIL patterns
+    :param pattern_category: str
+        choices are INT, SAF and TDF
+    """
     cfg = generate_cfg_path(path_stil_files,pattern_category)
 
     if os.path.exists(cfg):
@@ -383,25 +388,32 @@ def modify_cfg(path_stil_files, pattern_category):
                 elif pattern_category.lower() in ['int','saf']:
                     if fnmatch.fnmatch(stil_basename,'*_ts.stil'):
                         hdr_name = os.path.splitext(stil_basename)[0]
-                        # print('hdr:', hdr_name)
+
+
                     else:
                         pl_name = os.path.splitext(stil_basename)[0]
-                        # print('pl:',pl_name)
+
 
             if pattern_category.lower() == 'tdf':
                 #grab pattern name from map file
                 df_map = pd.read_csv(map_path)
                 #for TDF, header alone is sufficient to identify pattern name in map file
-                pattern_name = df_map.loc[df_map['Header'] == hdr_name, 'Pattern'].values[0]
+                pattern_name = df_map.loc[df_map['header'] == hdr_name, 'Pattern'].values[0]
                 # add BURST section to the end of CFG file; NOTE: header needs to be listed above payloads!
                 list_lines = ["\nBURST  " + pattern_name, "\n  " + hdr_name] + list_pl_name + ["\nEND BURST"]
             elif pattern_category.lower() in ['int','saf']:
                 df_map = pd.read_csv(map_path)
+
                 #for INT/SAF, both header and payload are needed to identify pattern name in map file
-                filter = (df_map['Header vector name'] == hdr_name) & (df_map['Payload vector name'] == pl_name)
-                pattern_name = df_map.loc[filter, 'Pattern name'].values[0]
+                stripped_pl = pl_name[8:]
+                if pattern_category.lower() in ['int']:
+                    filter = (hdr_name == df_map['header']) & (stripped_pl == df_map['payload'])
+                else:
+                    filter = (hdr_name == df_map['header'])
+
+                pattern_name = df_map.loc[filter, 'Vector'].values[0]
                 # add BURST section to the end of CFG file; NOTE: header needs to be listed above payloads!
-                list_lines = ["\nBURST  " + pattern_name, "\n  " + hdr_name, "\n  " + pl_name, "\nEND BURST"]
+                list_lines = ["\nBURST  " + "MBURST_" + pattern_name + "_XMD", "\n  " + hdr_name, "\n  " + pl_name, "\nEND BURST"]
 
             with open(cfg,'a') as f:
                 f.writelines(list_lines)
@@ -409,7 +421,16 @@ def modify_cfg(path_stil_files, pattern_category):
         logger.error('Error! No correct CFG file is found! Please check the directory.')
 
 def convert_stil_files(path_stil_files, pattern_category):
-    """convert stil files to .dp files"""
+    """
+    convert stil files to .dp files
+
+    :param path_stil_files: str
+        directory to STIL patterns
+    :param pattern_category: str
+        choices are INT, SAF and TDF
+    :return: bool
+        1 if successful; 0 in case of errors
+    """
     cfg = generate_cfg_path(path_stil_files, pattern_category)
 
     # check if velocity cfg exists in the dir
@@ -464,6 +485,7 @@ def convert_stil_files(path_stil_files, pattern_category):
 
             # check if all individual STIL files are converted, and a combined DP is burst
             list_dp_files = glob.glob(path_stil_files + '/**/*.dp', recursive=True)
+
             if len(list_dp_files) == (len(list_stil_files) + 1):
                 # print('\n****** Conversion Completed ******\n')
                 logger.info('Cool! Conversion Successful')
@@ -489,7 +511,13 @@ def convert_stil_files(path_stil_files, pattern_category):
         return 0
 
 def screen_mode(path_stil_files):
-    """screen mode to determine if shift freq needs change"""
+    """
+    screen voltage mode to determine if scan freq needs change due to the restriction that EV100 freq limit is 100MHz
+
+    :param path_stil_files: str
+        directory to STIL patterns
+    :return: bool
+    """
     mode = os.path.basename(path_stil_files)
     if mode == 'LSVS':
         change_period = False
@@ -498,7 +526,15 @@ def screen_mode(path_stil_files):
     return change_period
 
 def get_timing(path_stil_files, change_timing=False):
-    """get scan clock period from .h file"""
+    """
+    get scan clock period from .h file
+
+    :param path_stil_files: str
+        directory to STIL patterns
+    :param change_timing: bool
+        default = False. flag to determine if scan freq change is needed
+    :return: different returns depending on "change_timing"
+    """
     # get a list of .h files
     h_file_list = glob.glob(path_stil_files + '/**/*.h', recursive=True)
     # only one .h file should be present for batch conversion
@@ -533,7 +569,15 @@ def get_timing(path_stil_files, change_timing=False):
 
 
 def change_timing(path_stil_files, period_new):
-    """change scan clock period in .h file"""
+    """change scan clock period in .h file
+
+    :param path_stil_files: str
+        directory to STIL patterns
+    :param period_new: int
+        new scan period
+    :return:
+        intial scan period in int if successful; 'na' in str in case of errors
+    """
     try:
         h_file, list_lines, index_line_period, period_initial = get_timing(path_stil_files, change_timing=True)
         # edit the line with new timing
@@ -549,43 +593,15 @@ def change_timing(path_stil_files, period_new):
         logger.exception('Error! Period failed to be changed.')
         return 'na'
 
-def compile_do_files_mod(path_stil_files):
-    """compile .dp files to .do files"""
-    # get a list of all .dp file paths in the subdirectories
-    dp_file_list = glob.glob(path_stil_files + '/**/*.dp', recursive=True)
-
-    # set up paths
-    path_tsets = os.path.join(path_stil_files, 'device', 'test')
-    path_ddc192 = "\"C:\Program Files\TEV\AXI\Bin\ddc192.exe\""
-
-    for dp_file in dp_file_list:
-        # create .do pattern and compilation log file names
-        do_file = dp_file.replace('.dp','.do')
-        compile_log_file = dp_file.replace('.dp', '.log')
-
-        compile_cmd = path_ddc192 + ' -v -I ' + path_tsets + ' -L ' + compile_log_file + ' -o ' + do_file + ' ' + dp_file
-        logger.debug('Compilation command:\n{}\n'.format(compile_cmd))
-
-        logger.info('Starting to compile DO .....')
-        start = time.time()
-        err = os.system(compile_cmd)
-        # print('Compilation error: {}\n'.format(err))
-        if err:
-            # print('****** Compilation Has Error! ******\n')
-            logger.error('Error! Compilation NOT Successful.')
-        else:
-            # print('****** Compilation Completed ******\n')
-            logger.info('Cool! Compilation Successful.')
-        end = time.time()
-        elapsed = end - start
-        logger.info(f'== Time elapsed for compiling DO: {timedelta(seconds=elapsed)} ==')
-        do_file_base = os.path.basename(do_file)
-    # return dict_compile
-    return err, do_file_base
-
 def compile_do_files(path_stil_files):
-    """compile .dp files to .do files
-        ORIGINAL FUNC
+    """
+    compile .dp files to .do files
+
+    :param path_stil_files: str
+        directory to STIL patterns
+    :return: int
+        non-zero: error happened in compilation; zero: compilation successful
+        .do pattern name
     """
     # get a list of all .dp file paths in the subdirectories
     dp_file_list = glob.glob(path_stil_files + '/**/*.dp', recursive=True)
@@ -624,30 +640,52 @@ def compile_do_files(path_stil_files):
     # return dict_compile
     return err, do_file_base
 
-# def extract_cycle_count(path_stil_files):
-#     """
-#     extract cycle count info from .dp files
-#     this method works now for uncompressed patterns
-#     """
+
+# def extract_cycle_count_mod(path_stil_files):
+#     """extract cycle count info from .dp files"""
+#
 #     dp_file_list = glob.glob(path_stil_files + '/**/*.dp', recursive=True)
-#     kw = 'MBURST'
+#     kw = 'MHz'
 #
 #     for dp_path in dp_file_list:
 #         if kw in dp_path:
-#             # count rows of vectors; each row contains "T = T0 or T1"
-#             cnt = 0
-#             with open(dp_path,'r') as f:
-#                 for line in f:
-#                     if 'T =' in line:
-#                         cnt += 1
-#                 cyc_cnt = cnt + 1
+#             # with open(dp_path, 'r') as f:
+#             #     for line in f:
+#             #         pass
+#             #     last_line = line
+#
+#             # last line of burst DP contains cycle count info
+#             # seek to the end of the file, and move backwards to find a new line
+#             # NOTE: avoid f.readlines() to flood the memory!
+#             with open(dp_path, 'rb') as f:
+#                 f.seek(-2, os.SEEK_END)
+#                 while f.read(1) != b'\n':
+#                     f.seek(-2, os.SEEK_CUR)
+#                 last_line = f.readline().decode()
+#
+#             # find cycle count
+#             match = re.search('Cycles:(\d+)', last_line, re.IGNORECASE)
+#             if match:
+#                 cycle_count = int(match.group(1))
+#             else:
+#                 print('No cycle count can be found!\n')
+#                 cycle_count = 0
 #             break
-#     return cyc_cnt
-def extract_cycle_count_mod(path_stil_files):
-    """extract cycle count info from .dp files"""
+#     return cycle_count
+
+
+def extract_cycle_count(path_stil_files):
+    """
+    extract cycle count info from .dp files
+
+    :param path_stil_files: str
+        directory to STIL patterns
+    :return: int
+        vector cycle count
+    """
 
     dp_file_list = glob.glob(path_stil_files + '/**/*.dp', recursive=True)
-    kw = 'MHz'
+    kw = 'MBURST'
 
     for dp_path in dp_file_list:
         if kw in dp_path:
@@ -675,43 +713,15 @@ def extract_cycle_count_mod(path_stil_files):
             break
     return cycle_count
 
-
-def extract_cycle_count(path_stil_files):
-        """extract cycle count info from .dp files"""
-
-        dp_file_list = glob.glob(path_stil_files + '/**/*.dp', recursive=True)
-        kw = 'MBURST'
-
-        for dp_path in dp_file_list:
-            if kw in dp_path:
-                # with open(dp_path, 'r') as f:
-                #     for line in f:
-                #         pass
-                #     last_line = line
-
-                # last line of burst DP contains cycle count info
-                # seek to the end of the file, and move backwards to find a new line
-                # NOTE: avoid f.readlines() to flood the memory!
-                with open(dp_path, 'rb') as f:
-                    f.seek(-2, os.SEEK_END)
-                    while f.read(1) != b'\n':
-                        f.seek(-2, os.SEEK_CUR)
-                    last_line = f.readline().decode()
-
-                # find cycle count
-                match = re.search('Cycles:(\d+)', last_line, re.IGNORECASE)
-                if match:
-                    cycle_count = int(match.group(1))
-                else:
-                    print('No cycle count can be found!\n')
-                    cycle_count = 0
-                break
-        return cycle_count
-
 def patch_timesets_header(path_stil_files, pattern_category):
     """
     modify edgeset for INT, SAF
     patch test_TimeSets.h with pingroup IN,OUT,CLK
+
+    :param path_stil_files: str
+        directory to STIL patterns
+    :param pattern_category: str
+        choices are INT, SAF and TDF
     """
     path_timesets = os.path.join(path_stil_files,'device','test','test_TimeSets.h')
     if os.path.exists(path_timesets):
@@ -748,7 +758,12 @@ def patch_timesets_header(path_stil_files, pattern_category):
         logger.error(f'Error! test_TimeSets.h cannot be found! Please check in the directory: {path_stil_files}')
 
 def remove_extra_pingroup(path_stil_files):
-    """temporarily used to remove extra pingroups generated from all the TDF slice combination"""
+    """
+    temporarily used to remove extra pingroups generated from all the TDF slice combination
+
+    :param path_stil_files: str
+        directory to STIL patterns
+    """
     path_timesets = os.path.join(path_stil_files, 'device', 'test', 'test_TimeSets.h')
     if os.path.exists(path_timesets):
         with open(path_timesets, 'r+') as f:
@@ -766,18 +781,29 @@ def remove_extra_pingroup(path_stil_files):
 
 def log_conversion_info(path_stil_files, pattern_category, vector_type, compile_error, do_file_base, change_period, initial_period, new_period, cyc_cnt, log_name):
     """
-    log info of conversion:
-    0. time stamp
-    1. vector category (INT, SAF, TDF)
-    2. vector type (PROD or RMA)
-    3. block
-    4. domain
-    5. corner
-    6. DO file name
-    7. spec shift freq
-    8. timing adjusted?
-    9. adjusted shift freq
-    10. cycle count
+    log conversion information into a csv file
+
+    :param path_stil_files: str
+        directory to STIL patterns
+    :param pattern_category: str
+        choices are INT, SAF and TDF
+    :param vector_type: str
+        choice of vector type has PROD or RMA. As project evolves, more choices might come
+    :param compile_error: int
+        non-zero: error happened in compilation; zero: compilation successful
+    :param do_file_base: str
+        .do pattern name
+    :param change_period: bool
+        flag to determine if scan period change in pattern is needed
+    :param initial_period: int
+        intial scan period native to the pattern
+    :param new_period:
+        target new scan period
+    :param cyc_cnt: int
+        vector cycle count extracted from .dp file
+    :param log_name: str
+        conversion log name (w/o .csv extension)
+    :return:
     """
 
     # create dir if not exist
@@ -901,7 +927,12 @@ def log_conversion_info(path_stil_files, pattern_category, vector_type, compile_
     #     writer.writerows(list_row)
 
 def del_zip(path_stil_files):
-    """delete all the stil.gz zip files"""
+    """
+    delete all the stil.gz zip files
+
+    :param path_stil_files: str
+        directory to STIL patterns
+    """
     # grab names of all .gz zip files and save to a list
     zip_file_path = os.path.join(path_stil_files, '*.stil.gz')
     list_zip_files = glob.glob(zip_file_path)
@@ -920,7 +951,7 @@ def del_zip(path_stil_files):
                 logger.info(f'{len(list_zip_files)} zip files are successfully deleted.')
 
 def patch_dp_file(path_stil_files):
-    """temporarily patch the combined .dp file to incorporate runsequence pattern"""
+    """temporarily used to patch the combined .dp file to incorporate runsequence pattern"""
     # find the combined .dp file
     dp_file_list = glob.glob(path_stil_files + '/**/*combined.dp', recursive=True)
     if not len(dp_file_list):
@@ -943,7 +974,6 @@ def patch_dp_file(path_stil_files):
     with open(runsequence_seed_file, 'r') as f:
         runsequence_template = f.readlines()
         print(type(runsequence_template))
-        # TODO: why list_lines can be accessible outside with the first with statement?
         joined_list = list_lines + runsequence_template
 
     with open(dp_file,'w') as f:
@@ -952,69 +982,22 @@ def patch_dp_file(path_stil_files):
 
 def main():
 
-    ## change py log name ##
-    # global py_log_name
-    # # py_log_name = '120420_TDF_PROD_recompile_after_pingroup_removal.log'
-    # py_log_name = '020221_CPU_TDF_PROD_test.log'
-    ########################
-
-
-    pattern_category = 'TDF'
+    ##*** 5/26/21,  Examples demoed to Kunag. Demoed on SVE-EV100-1 PC***##
+    ### 1. Copy all STIL zip files from network drive to local PC ###
+    pattern_category = 'SAF'
     vector_type = 'PROD'
-    # list_block_hp = ['TDF_ATPG_CPU','TDF_ATPG_GFX','TDF_ATPG_DDR','TDF_ATPG_Q6','TDF_ATPG_REST']
-    # list_block_lp = ['TDF_ATPG_CAMDV','TDF_ATPG_MODEM','TDF_ATPG_SP','TDF_ATPG_TILE','TDF_ATPG_TOP']
-    local_loc = r"F:\ATPG_CDP\Lahaina\r2"
-    # create folder if not exists
-    create_folder(local_loc)
-
-    ## copy to local PC from network drive ###
+    local_loc = r"G:\ATPG_CDP\freq_mode_5_updated\waipio\r1_sec5lpe\ATPG"
+    # Uncomment the below func call (copy_all_zip()) to enable STIL zip files copying
     # copy_all_zip(pattern_category,vector_type,local_loc)
-    # copy_zip(category,vector_type, local_loc,'block',block)
 
-    ### conversion ###
-    # log_name = 'lahaina_r2_tdf_prod_extra_pingroup_removal_n_recompile'
-    log_name = '020821_lahaina_r2_tdf_prod_TOP_reconvert'
+    ### 2. Convert patterns from STIL to DO format ###
+    dir_to_conv = os.path.join(local_loc, pattern_category, vector_type)
+    log_name = '061521_conv_test_log'
+    # Uncomment the below func call (traverse_levels()) to enable pattern conversion
+    traverse_levels(dir_to_conv,pattern_category,vector_type,log_name,enable_del_zip=False)
 
-    # == INT, SAF == #
-    # dir_to_conv = os.path.join(local_loc, pattern_category, vector_type)
-    # traverse_levels(dir_to_conv,pattern_category,vector_type,log_name,enable_del_zip=0)
-
-    # == TDF == #
-    # dir_to_conv = os.path.join(local_loc, pattern_category, vector_type)
-    # traverse_levels(dir_to_conv,pattern_category,vector_type,log_name,0)
-
-    # convert one block only
-    dir_to_conv = os.path.join(local_loc, pattern_category, vector_type, 'TDF_ATPG_TOP')
-    # traverse_levels(dir_to_conv,pattern_category,vector_type,log_name=log_name,enable_del_zip=0)
-
-    # conv_log = os.path.join(conversion_log_csv_path, 'lahaina_r2_tdf_pattern_prod_111020.csv')
-    # df_conv_log = pd.read_csv(conv_log)
-    #
-    #
-    # list_rem = ['TDF_ATPG_TILE', 'TDF_ATPG_TOP']
-
-    # list_domain_exclude = ['gfxcoref1070','gfxcxf184','gfxcxm1','gfxtopf183','gfxtopf600','gfxtopf682','gfxtopf95']
-    # list_dirs_exclude = list(map(lambda x: os.path.join(dir_to_conv,x), list_domain_exclude))
-    # print(list_dirs_exclude)
-
-    # list_all_block = list(load_filter_map(pattern_category,vector_type)['Block'].unique())
-    # list_rem = [blk for blk in list_all_block if blk not in list_block_hp]
-
-
-    # for blk in list_block_lp:
-    #     dir_to_conv = os.path.join(local_loc,pattern_category,vector_type,blk)
-    #     # if blk == 'TDF_ATPG_TILE':
-    #     #     filter = (df_conv_log['category'] == pattern_category) & (df_conv_log['vector_type'] == vector_type) & (
-    #     #             df_conv_log['block'] == blk)
-    #     #     list_domain_exclude = list(df_conv_log.loc[filter, 'domain'].unique())
-    #     #     print(list_domain_exclude)
-    #     #     list_dirs_exclude = list(map(lambda x: os.path.join(dir_to_conv, x), list_domain_exclude))
-    #     #
-    #     #     traverse_levels(dir_to_conv,pattern_category,log_name,enable_del_zip=0,list_dirs_exclude=list_dirs_exclude)
-    #     #     traverse_levels(dir_to_conv,pattern_category,log_name,enable_del_zip=0,list_dirs_exclude=list_domain_exclude)
-    #     # else:
-    #     traverse_levels(dir_to_conv,pattern_category,vector_type,log_name,enable_del_zip=0)
-
+    ### 3. View doc string ###
+    print(traverse_levels.__doc__) # get the docstring of function traverse_levels()
 
 if __name__ == "__main__":
     main()
