@@ -37,7 +37,7 @@ class PostProcess():
         sn_list = []
         sn_files = {}
         pattern_index = 0
-        index = 0
+        index = []
         for run in runs:
             # csv_path = os.path.join(dlog_dir, '*.csv')
             dlog_dir = os.path.join(base_dir, "pattern_execution", "execution_dlog", run, 'dlog')
@@ -72,60 +72,70 @@ class PostProcess():
             sn = sn.split(" ")[0]
             for path in paths:
                 dlog_output = pd.read_csv(path)
-                pattern = dlog_output.at[0, 'PatternName']
-                if pattern in pattern_names:
-                    index = pattern_names.get(pattern)
-                    if pd.isnull(sn_df.loc[index, sn]):
-                        if int(dlog_output['Failures']) != 0:
-                            sn_df.at[index, sn] = 'F'
+                # print(dlog_output)
+                # print(dlog_output['PatternName'].to_list())
+                # print(dlog_output['Failures'].dtypes)
+                # dlog_output['Failures'] = dlog_output['Failures'].astype(int)
+                # print(" --- Length --  ",len(dlog_output))
+                # print(" ---- Shape -- ",dlog_output.shape)
+                for i in range(len(dlog_output)):
+                    pattern = dlog_output.at[i,'PatternName']
+                    # print(pattern)
+                    # print(pattern_names)
+                    if pattern in pattern_names:
+                        index = pattern_names.get(pattern)
+                        if pd.isnull(sn_df.loc[index, sn]):
+                            if dlog_output.at[i,'Failures'] !=0:
+                            # if dlog_output['Failures'].any() != 0:
+                                sn_df.at[index, sn] = 'F'
+                            else:
+                                sn_df.at[index, sn] = ''
                         else:
-                            sn_df.at[index, sn] = 'P'
-                    else:
-                        # cell_value = sn_df.loc[index, sn]
-                        # sn_df.at[index, sn] = cell_value + 'F'
-                        if pattern+"_2" in pattern_names:
-                            if pd.isnull(sn_df.loc[index, sn]):
-                                if int(dlog_output['Failures']) != 0:
-                                    sn_df.at[index, sn] = 'F'
-                                else:
-                                    sn_df.at[index, sn] = 'P'
-                            elif pattern+"_3" in pattern_names:
+                            # cell_value = sn_df.loc[index, sn]
+                            # sn_df.at[index, sn] = cell_value + 'F'
+                            if pattern+"_2" in pattern_names:
                                 if pd.isnull(sn_df.loc[index, sn]):
                                     if int(dlog_output['Failures']) != 0:
                                         sn_df.at[index, sn] = 'F'
                                     else:
-                                        sn_df.at[index, sn] = 'P'
+                                        sn_df.at[index, sn] = ''
+                                elif pattern+"_3" in pattern_names:
+                                    if pd.isnull(sn_df.loc[index, sn]):
+                                        if int(dlog_output['Failures']) != 0:
+                                            sn_df.at[index, sn] = 'F'
+                                        else:
+                                            sn_df.at[index, sn] = ''
+                                else:
+                                    pattern_names[pattern + "_3"] = pattern_index
+                                    if int(dlog_output.at[i, 'Failures']) != 0:
+                                        sn_df.at[pattern_index, sn] = 'F'
+                                    if int(dlog_output.at[i, 'Failures']) == 0:
+                                        sn_df.at[pattern_index, sn] = ''
+                                    if int(dlog_output.at[i, 'PatternRunTime']) > 16:
+                                        sn_df.at[pattern_index, sn] = 'T'
+                                    pattern_index += 1
                             else:
-                                pattern_names[pattern + "_3"] = pattern_index
-                                if int(dlog_output.at[0, 'Failures']) != 0:
+                                pattern_names[pattern + "_2"] = pattern_index
+                                if int(dlog_output.at[i, 'Failures']) != 0:
                                     sn_df.at[pattern_index, sn] = 'F'
-                                if int(dlog_output.at[0, 'Failures']) == 0:
-                                    sn_df.at[pattern_index, sn] = 'P'
-                                if int(dlog_output.at[0, 'PatternRunTime']) > 16:
+                                if int(dlog_output.at[i, 'Failures']) == 0:
+                                    sn_df.at[pattern_index, sn] = ''
+                                if int(dlog_output.at[i, 'PatternRunTime']) > 16:
                                     sn_df.at[pattern_index, sn] = 'T'
                                 pattern_index += 1
-                        else:
-                            pattern_names[pattern + "_2"] = pattern_index
-                            if int(dlog_output.at[0, 'Failures']) != 0:
-                                sn_df.at[pattern_index, sn] = 'F'
-                            if int(dlog_output.at[0, 'Failures']) == 0:
-                                sn_df.at[pattern_index, sn] = 'P'
-                            if int(dlog_output.at[0, 'PatternRunTime']) > 16:
-                                sn_df.at[pattern_index, sn] = 'T'
-                            pattern_index += 1
 
 
-                else:
-                    pattern_names[pattern] = pattern_index
+                    else:
+                        pattern_names[pattern] = pattern_index
 
-                    if int(dlog_output.at[0, 'Failures']) != 0:
-                        sn_df.at[pattern_index, sn] = 'F'
-                    if int(dlog_output.at[0, 'Failures']) == 0:
-                        sn_df.at[pattern_index, sn] = 'P'
-                    if int(dlog_output.at[0, 'PatternRunTime']) > 16:
-                        sn_df.at[pattern_index, sn] = 'T'
+                        if int(dlog_output.at[i, 'Failures']) != 0:
+                            sn_df.at[pattern_index, sn] = 'F'
+                        if int(dlog_output.at[i, 'Failures']) == 0:
+                            sn_df.at[pattern_index, sn] = ''
+                        if int(dlog_output.at[i, 'PatternRunTime']) > 16:
+                            sn_df.at[pattern_index, sn] = 'T'
 
-                    pattern_index += 1
+                        pattern_index += 1
 
         pattern_rows = list(pattern_names.items())
         df_data = pd.DataFrame(pattern_rows, columns=["Pattern Name", "Index"])
@@ -139,17 +149,17 @@ class PostProcess():
         else "NOM", axis=1)
 
        # df_data["# failing"] = sn_df.notnull().sum(axis=1)
-        sn_df.replace('F', 1, inplace = True)
-        sn_df.replace('P', 0, inplace=True)
+        sn_df.replace('F', 1, inplace=True)
+        sn_df.replace('', 0, inplace=True)
         pd.set_option('display.max_rows', None)
         pd.set_option('display.max_columns', None)
         pd.set_option('display.width', None)
         pd.set_option('display.max_colwidth', -1)
-        print(sn_df)
+        # print(sn_df)
         df_data['# failing'] = sn_df.sum(axis=1)
         df_data["# failing"].fillna("0", inplace=True)
         sn_df.replace(1, "F", inplace=True)
-        sn_df.replace(0, "P", inplace=True)
+        sn_df.replace(0, "", inplace=True)
         df_data = pd.concat([df_data, sn_df], axis=1)
         df_data.pop('Index')
         output_file = os.path.join(output_dir, "postprocess_failures.csv")
@@ -251,6 +261,7 @@ class PostProcess():
         passing_rate = {"INT": [], "SAF": [], "TDF": []}
         failing_vectors = []
         output_path = paths[0]
+        print(output_path)
         df_map = pd.read_csv(output_path)
 
         totals = df_map.loc[:,['DFT Type', 'freq mode']].pivot_table(index='DFT Type', columns='freq mode',
@@ -444,14 +455,14 @@ def main():
     Post process results of runs for dft vectors and various freq modes
     """
     chip_version = 'Waipio'
-    base_dir = r"G:\r2_patterns"
-    runs = ["dft_run_2021-08-10", "dft_run_2021-08-11"]
+    base_dir = r"G:\r2_grouping"
+    runs = ["dft_run_2021-09-15", "dft_run_2021-09-16" ]
     #output_dir = r"G:\ATPG_CDP\pattern_execution\output_new"
     # base_dir = r"C:\Users\rpenmatc\OneDrive - Qualcomm\Desktop"
     # runs = ["dft_run_2021-07-01"]
-    output_dir = r"G:\r2_patterns\pattern_execution\execution_dlog\dft_run_2021-08-10"
+    output_dir = r"G:\r2_grouping\pattern_execution\execution_dlog\dft_run_2021-09-16"
     post = PostProcess()
-    exclude_chips = ["dft_run_2021-08-10 sys2", "dft_run_2021-08-11 0x0x6D01A31B", "dft_run_2021-08-11 0x0x687B65C1", "dft_run_2021-08-11 0x0xA4346FFC", "dft_run_2021-08-11 0x0x69B2B779"]
+    exclude_chips = []
     post.dlog_csv_post_process(base_dir, runs, output_dir, exclude_chips)
     post.all_data_compiled(output_dir)
     #post.tdf_shmoo_graph(r"C:\Users\rpenmatc\OneDrive - Qualcomm\Desktop\data", output_dir)
