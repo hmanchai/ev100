@@ -86,8 +86,10 @@ class Generate_Pats():
             # elif pattern_category.lower() in ['int', 'saf']:
                 #path_top_level = os.path.join(dir_pat, pattern_category, vector_type)
             path_top_level = dir_pat
-            dir_sub = os.path.join(dir_exec, mode, pattern_category, vector_type)
-            pre_fix = 'PATS_' + pattern_category + '_' + vector_type + '_'
+            # dir_sub = os.path.join(dir_exec, mode, pattern_category, vector_type)
+            dir_sub = os.path.join(dir_exec, mode, vector_type)
+            # pre_fix = 'PATS_' + pattern_category + '_' + vector_type + '_'
+            pre_fix = 'PATS_' + mode + '_' + vector_type + '_'
 
             self.make_folder.create_folder(dir_sub)
 
@@ -136,7 +138,8 @@ class Generate_Pats():
                     with open(pats_txt, 'a+') as f:
                         f.write(to_write + '\n')
 
-            print(f'*** PATS.txt generation completed for {pattern_category} {vector_type}{mode}')
+            # print(f'*** PATS.txt generation completed for {pattern_category} {vector_type}{mode}')
+            print(f'*** PATS.txt generation completed for {vector_type}{mode}')
 
     def add_pattern_info(self, df_conv_log, do_file, enable_cyc_cnt):
         """
@@ -191,14 +194,14 @@ class Generate_Pats():
                     modes_pattern = "(.*)(\\\)(" + modes + ")(\\\)(.*)"
                     #root.replace("\\", r"\\")
                     if re.search(modes_pattern, root):
-                        if re.search(pattern_category, root):
-                            if re.search(vector_type, root):
-                                if df_conv_log['pattern_name'].str.contains(file).any():
-                                    for df_block in df_conv_log['block']:
-                                        if df_block + "\\device\\test" == root:
+                        # if re.search(pattern_category, root):
+                        if re.search(vector_type, root):
+                            if df_conv_log['pattern_name'].str.contains(file).any():
+                                for df_block in df_conv_log['block']:
+                                    if df_block + "\\device\\test" == root:
 
-                                            do_file = os.path.join(root, file)
-                                            do_files.append(do_file)
+                                        do_file = os.path.join(root, file)
+                                        do_files.append(do_file)
         return do_files
 
     def pats_per_txt(self, do_files, lim):

@@ -456,11 +456,11 @@ def main():
     """
     chip_version = 'Waipio'
     base_dir = r"G:\r2_grouping"
-    runs = ["dft_run_2021-09-15", "dft_run_2021-09-16" ]
+    runs = ["dft_run_2021-09-29", "dft_run_2021-09-30", "dft_run_2021-10-01", "dft_run_2021-10-02", "dft_run_2021-10-03"]
     #output_dir = r"G:\ATPG_CDP\pattern_execution\output_new"
     # base_dir = r"C:\Users\rpenmatc\OneDrive - Qualcomm\Desktop"
     # runs = ["dft_run_2021-07-01"]
-    output_dir = r"G:\r2_grouping\pattern_execution\execution_dlog\dft_run_2021-09-16"
+    output_dir = r"G:\r2_grouping\pattern_execution\execution_dlog\dft_run_2021-10-03"
     post = PostProcess()
     exclude_chips = []
     post.dlog_csv_post_process(base_dir, runs, output_dir, exclude_chips)

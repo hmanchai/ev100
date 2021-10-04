@@ -310,11 +310,20 @@ class Conversion:
             # print(*list_zip_files_sorted, sep='\n')
 
             # unzip and name .stil file to match .gz file
+            # renaming only the header with a suffix to make SAF Vectors Unique
             for zip_file in list_zip_files:
-                stil_file = os.path.splitext(zip_file)[0]
-                with gzip.open(zip_file, 'rb') as f_in:
-                    with open(stil_file, 'wb') as f_out:
-                        shutil.copyfileobj(f_in, f_out)
+                if "_ts" in zip_file:
+                    stil_file_1 = os.path.splitext(zip_file)[0][:-5]
+                    hdr_suffix = "_".join(path_stil_files.split("\\")[9:-2])
+                    stil_file = stil_file_1 + "_" + hdr_suffix + ".stil"
+                    with gzip.open(zip_file, 'rb') as f_in:
+                        with open(stil_file, 'wb') as f_out:
+                            shutil.copyfileobj(f_in, f_out)
+                else:
+                    stil_file = os.path.splitext(zip_file)[0]
+                    with gzip.open(zip_file, 'rb') as f_in:
+                        with open(stil_file, 'wb') as f_out:
+                            shutil.copyfileobj(f_in, f_out)
             return 1
         except FileNotFoundError as e:
             # print(e)
@@ -396,11 +405,12 @@ class Conversion:
                             list_pl_name.append("\n  " + os.path.splitext(stil_basename)[0])
                         else:
                             hdr_name = os.path.splitext(stil_basename)[0]
-
+                    # split header name so that it can be identified by map file
                     elif pattern_category.lower() in ['int', 'saf']:
-                        if fnmatch.fnmatch(stil_basename, '*_ts.stil'):
-                            hdr_name = os.path.splitext(stil_basename)[0]
-
+                        if fnmatch.fnmatch(stil_basename, '*_ts*.stil'):
+                            hdr_name_1 = os.path.splitext(stil_basename)[0].split('_ts')
+                            hdr_name = hdr_name_1[0] + "_ts"
+                            suffix = hdr_name_1[1]
 
                         else:
                             pl_name = os.path.splitext(stil_basename)[0]
@@ -427,7 +437,7 @@ class Conversion:
 
                     pattern_name = df_map.loc[filter, 'Vector'].values[0]
                     # add BURST section to the end of CFG file; NOTE: header needs to be listed above payloads!
-                    list_lines = ["\nBURST  " + "MBURST_" + pattern_name + "_XMD", "\n  " + hdr_name, "\n  " + pl_name,
+                    list_lines = ["\nBURST  " + "MBURST_" + pattern_name + suffix + "_XMD", "\n  " + hdr_name + suffix, "\n  " + pl_name,
                                   "\nEND BURST"]
 
                 with open(cfg, 'a') as f:
@@ -866,8 +876,9 @@ class Conversion:
         if pattern_category.lower() == 'tdf':
             list_attr = ['domain', 'block']
             # get domain, block
-            for i in range(len(list_attr)):
-                list_attr_val.append(os.path.basename(Path(path_stil_files).parents[i]))
+            # for i in range(len(list_attr)):
+            list_attr_val.append(os.path.basename(Path(path_stil_files).parents[0]))
+            list_attr_val.append(path_stil_files)
         elif pattern_category.lower() in ['int', 'saf']:
             # get domain
             list_attr_val.append(os.path.basename(Path(path_stil_files).parents[0]))
