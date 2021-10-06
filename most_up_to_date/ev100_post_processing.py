@@ -19,7 +19,72 @@ class PostProcess():
     generates graphs and csv files
     """
 
-    def dlog_csv_post_process(self, base_dir, runs, output_dir, exclude_chips = []):
+    def dlog_csv_sn_post_process_patterns(self, output_dir):
+
+        # inner function to determine test type from each pattern name
+        def mode_test_from_pattern_name(pattern_name):
+            output1 = None
+            output2 = None
+            if pattern_name.find("_svs_") != -1:
+                output1 = "SVS"
+            elif pattern_name.find("_svsd1_") != -1:
+                output1 = "SVSD1"
+            elif pattern_name.find("_tur_") != -1:
+                output1 = "TUR"
+            else:
+                output1 = "NOM"
+            if pattern_name.find("_int_") != -1:
+                output2 = "INT"
+            elif pattern_name.find("_saf_") != -1:
+                output2 = "SAF"
+            elif pattern_name.find("_tdf_") != -1:
+                output2 = "TDF"
+            return output1 + '-' + output2
+
+        process_failures_file = os.path.join(output_dir, "postprocess_failures.csv")
+        df_data = pd.read_csv(process_failures_file)
+        serial_tallies = {}  # dictionary to hold both  number of failed patterns for each sn, as well as the set of failed patterns themselves
+        serial_columns = []  # list of sn's extracted from the summary data file
+
+        # sn list extraction
+        for column in df_data.columns:
+            if (column != "Pattern Name" and column != "DFT Type" and column != "freq mode" and column != "# failing"):
+                serial_tallies[column] = [0, set()]  # set type used to ensure that no duplicate patterns are counted
+                serial_columns.append(column)
+
+        # counter for failures and patterns per part
+        for serial_column in serial_columns:
+            for i in range(len(df_data)):
+                if (df_data.loc[
+                    i, serial_column] == 'F'):  # check for any and all 'F''s in the generated post_processfailures.csv
+                    serial_tallies[serial_column][0] += 1
+                    serial_tallies[serial_column][1].add(df_data.loc[i, "Pattern Name"])
+
+        # initalizing pandas DataFrame object for the final output
+        df_output = pd.DataFrame({"SN": serial_columns, "NOM-INT": '', "NOM-SAF": '', "NOM-TDF": '',
+                                  "SVS-INT": '', "SVS-SAF": '', "SVS-TDF": '',
+                                  "SVSD1-INT": '', "SVSD1-SAF": '', "SVSD1-TDF": '',
+                                  "TUR-INT": '', "TUR-SAF": '', "TUR-TDF": ''})
+
+        for i in range(len(df_output.index)):
+            serial = df_output.loc[i, "SN"]
+            if (serial_tallies[serial][0] <= 10 and serial_tallies[serial][
+                0] > 0):  # discarding any +10 failure rates for the purposes of debug
+                for pattern_name in serial_tallies[serial][1]:
+                    mode_test = mode_test_from_pattern_name(
+                        pattern_name)  # use the concatenated fred mode/test type string as a way to determine which cell to update
+                    if (df_output.loc[i, mode_test] == ''):
+                        df_output.loc[i, mode_test] = pattern_name
+                    else:
+                        df_output.loc[i, mode_test] = df_output.loc[
+                                                          i, mode_test] + ',' + pattern_name  # concatenate all patterns with shared freq/test type by ','
+
+        output_file = os.path.join(output_dir, "vector_failures_per_sn.csv")
+
+        # index set to False as to eliminate unnecessary numerals in the final output file
+        df_output.to_csv(output_file, index=False)
+
+    def dlog_csv_post_process(self, base_dir, runs, output_dir, exclude_chips=[]):
         """
         process individual dlog csv's to generate a summary test log csv of all runs
         removes all duplicates (saves first occurring duplicate)
@@ -43,7 +108,7 @@ class PostProcess():
             dlog_dir = os.path.join(base_dir, "pattern_execution", "execution_dlog", run, 'dlog')
             list_results = []
 
-            #path = glob.glob(dlog_dir + "\\*\\*\\")
+            # path = glob.glob(dlog_dir + "\\*\\*\\")
 
             # freq_mode = re.search("(.*)(\\\)(.*)(\\\)$", path[0]).group(3)
             output_dir = os.path.join(output_dir)
@@ -79,27 +144,27 @@ class PostProcess():
                 # print(" --- Length --  ",len(dlog_output))
                 # print(" ---- Shape -- ",dlog_output.shape)
                 for i in range(len(dlog_output)):
-                    pattern = dlog_output.at[i,'PatternName']
+                    pattern = dlog_output.at[i, 'PatternName']
                     # print(pattern)
                     # print(pattern_names)
                     if pattern in pattern_names:
                         index = pattern_names.get(pattern)
                         if pd.isnull(sn_df.loc[index, sn]):
-                            if dlog_output.at[i,'Failures'] !=0:
-                            # if dlog_output['Failures'].any() != 0:
+                            if dlog_output.at[i, 'Failures'] != 0:
+                                # if dlog_output['Failures'].any() != 0:
                                 sn_df.at[index, sn] = 'F'
                             else:
                                 sn_df.at[index, sn] = ''
                         else:
                             # cell_value = sn_df.loc[index, sn]
                             # sn_df.at[index, sn] = cell_value + 'F'
-                            if pattern+"_2" in pattern_names:
+                            if pattern + "_2" in pattern_names:
                                 if pd.isnull(sn_df.loc[index, sn]):
                                     if int(dlog_output['Failures']) != 0:
                                         sn_df.at[index, sn] = 'F'
                                     else:
                                         sn_df.at[index, sn] = ''
-                                elif pattern+"_3" in pattern_names:
+                                elif pattern + "_3" in pattern_names:
                                     if pd.isnull(sn_df.loc[index, sn]):
                                         if int(dlog_output['Failures']) != 0:
                                             sn_df.at[index, sn] = 'F'
@@ -148,7 +213,7 @@ class PostProcess():
         else "SVSD1" if re.search("svsd1_", x["Pattern Name"])
         else "NOM", axis=1)
 
-       # df_data["# failing"] = sn_df.notnull().sum(axis=1)
+        # df_data["# failing"] = sn_df.notnull().sum(axis=1)
         sn_df.replace('F', 1, inplace=True)
         sn_df.replace('', 0, inplace=True)
         pd.set_option('display.max_rows', None)
@@ -261,11 +326,10 @@ class PostProcess():
         passing_rate = {"INT": [], "SAF": [], "TDF": []}
         failing_vectors = []
         output_path = paths[0]
-        print(output_path)
         df_map = pd.read_csv(output_path)
 
-        totals = df_map.loc[:,['DFT Type', 'freq mode']].pivot_table(index='DFT Type', columns='freq mode',
-                       aggfunc=len, fill_value=0)
+        totals = df_map.loc[:, ['DFT Type', 'freq mode']].pivot_table(index='DFT Type', columns='freq mode',
+                                                                      aggfunc=len, fill_value=0)
         freq_modes = df_map['freq mode'].unique()
         dft_options = ["INT", "SAF", "TDF"]
         for freq_mode in freq_modes:
@@ -321,7 +385,8 @@ class PostProcess():
                                         columns=list(passing_rate.keys()), index=freq_modes)
         df_parts_passing["total #"] = total_chips
 
-        self.create_summary_tables(df_failing_vectors, df_parts_passing, df_passing_rate, freq_modes, output_dir, totals)
+        self.create_summary_tables(df_failing_vectors, df_parts_passing, df_passing_rate, freq_modes, output_dir,
+                                   totals)
 
         self.plot_multibar_graphs(freq_modes, output_dir, passing_rate, total_parts)
 
@@ -368,7 +433,8 @@ class PostProcess():
         output_plot = os.path.join(output_dir, title + '.jpg')
         plt.savefig(output_plot)
 
-    def create_summary_tables(self, df_failing_vectors, df_parts_passing, df_passing_rate, freq_modes, output_dir, totals):
+    def create_summary_tables(self, df_failing_vectors, df_parts_passing, df_passing_rate, freq_modes, output_dir,
+                              totals):
         """
         write summary tables to csv
         """
@@ -456,16 +522,17 @@ def main():
     """
     chip_version = 'Waipio'
     base_dir = r"G:\r2_grouping"
-    runs = ["dft_run_2021-09-29", "dft_run_2021-09-30", "dft_run_2021-10-01", "dft_run_2021-10-02", "dft_run_2021-10-03"]
-    #output_dir = r"G:\ATPG_CDP\pattern_execution\output_new"
+    runs = ["dft_run_2021-10-04", "dft_run_2021-10-05", "dft_run_2021-10-06"]
+    # output_dir = r"G:\ATPG_CDP\pattern_execution\output_new"
     # base_dir = r"C:\Users\rpenmatc\OneDrive - Qualcomm\Desktop"
     # runs = ["dft_run_2021-07-01"]
-    output_dir = r"G:\r2_grouping\pattern_execution\execution_dlog\dft_run_2021-10-03"
+    output_dir = r"G:\r2_grouping\pattern_execution\execution_dlog\dft_run_2021-10-06"
     post = PostProcess()
-    exclude_chips = []
+    exclude_chips = ["dft_run_2021-10-06 0x0xE9CCCC6B"]
     post.dlog_csv_post_process(base_dir, runs, output_dir, exclude_chips)
     post.all_data_compiled(output_dir)
-    #post.tdf_shmoo_graph(r"C:\Users\rpenmatc\OneDrive - Qualcomm\Desktop\data", output_dir)
+    post.dlog_csv_sn_post_process_patterns(output_dir)
+    # post.tdf_shmoo_graph(r"C:\Users\rpenmatc\OneDrive - Qualcomm\Desktop\data", output_dir)
 
 
 if __name__ == "__main__":
