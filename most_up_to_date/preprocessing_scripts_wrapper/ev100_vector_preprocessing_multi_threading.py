@@ -312,7 +312,8 @@ class Preprocess():
         :return df_file_loc: DataFrame
             Dataframe updated with new source and destination of payload to be copied
         """
-        pl_name = 'tk_atpg_tdf_lpc' + re.search("(lpc)(.*)(_)(.*)(_)", row['Vector']).group(2) + '_slc_'
+        # pl_name = 'tk_atpg_tdf_lpc' + re.search("(lpc)(.*)(_)(.*)(_)", row['payload']).group(2) + '_slc_'
+        pl_name = 'tk_atpg_tdf_lpc' + re.search("(lpc)(.*)(_)(.*)", row['payload']).group(2) + '_slc_'
         pl_zip = pl_name + '*.stil.gz'
         # get a list of paths for all payload slices
         path_pl_zip = os.path.join(pl_path_to_copy, pl_zip)

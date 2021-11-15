@@ -699,6 +699,7 @@ class Conversion:
     #             break
     #     return cycle_count
 
+
     def extract_cycle_count(self, path_stil_files):
         """
         extract cycle count info from .dp files
@@ -1053,7 +1054,7 @@ class Conversion:
 #  pattern_category = 'SAF'
 #  vector_type = 'PROD'
 #  local_loc = r"G:\ATPG_CDP\freq_mode_5_updated\waipio\r1_sec5lpe\ATPG"
-#  # Uncomment the below func call (copy_all_zip()) to enable STIL zip files copying
+#  # Uncomment the below func call (copy_all_zip()) to enable STIL zip files copyingl
 #  # copy_all_zip(pattern_category,vector_type,local_loc)
 #
 #  ### 2. Convert patterns from STIL to DO format ###
@@ -1067,9 +1068,6 @@ class Conversion:
 
 # if __name__ == "__main__":
 #     main()
-
-
-
 
 def main():
     updated_date_time = time.strftime("%Y%m%d-%H%M%S")

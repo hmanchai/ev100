@@ -522,13 +522,13 @@ def main():
     """
     chip_version = 'Waipio'
     base_dir = r"G:\r2_grouping"
-    runs = ["dft_run_2021-10-04", "dft_run_2021-10-05", "dft_run_2021-10-06"]
+    runs = ["dft_run_2021-09-29", "dft_run_2021-09-30","dft_run_2021-10-01", "dft_run_2021-10-02", "dft_run_2021-10-03", "dft_run_2021-10-04", "dft_run_2021-10-05", "dft_run_2021-10-06", "dft_run_2021-10-07"]
     # output_dir = r"G:\ATPG_CDP\pattern_execution\output_new"
     # base_dir = r"C:\Users\rpenmatc\OneDrive - Qualcomm\Desktop"
     # runs = ["dft_run_2021-07-01"]
     output_dir = r"G:\r2_grouping\pattern_execution\execution_dlog\dft_run_2021-10-06"
     post = PostProcess()
-    exclude_chips = ["dft_run_2021-10-06 0x0xE9CCCC6B"]
+    exclude_chips = []
     post.dlog_csv_post_process(base_dir, runs, output_dir, exclude_chips)
     post.all_data_compiled(output_dir)
     post.dlog_csv_sn_post_process_patterns(output_dir)
