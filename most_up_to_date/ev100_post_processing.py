@@ -521,12 +521,12 @@ def main():
     Post process results of runs for dft vectors and various freq modes
     """
     chip_version = 'Waipio'
-    base_dir = r"G:\r2_grouping"
-    runs = ["dft_run_2021-09-29", "dft_run_2021-09-30","dft_run_2021-10-01", "dft_run_2021-10-02", "dft_run_2021-10-03", "dft_run_2021-10-04", "dft_run_2021-10-05", "dft_run_2021-10-06", "dft_run_2021-10-07"]
+    base_dir = r"G:\TDF"
+    runs = ["dft_run_2021-12-02"]
     # output_dir = r"G:\ATPG_CDP\pattern_execution\output_new"
     # base_dir = r"C:\Users\rpenmatc\OneDrive - Qualcomm\Desktop"
     # runs = ["dft_run_2021-07-01"]
-    output_dir = r"G:\r2_grouping\pattern_execution\execution_dlog\dft_run_2021-10-06"
+    output_dir = r"G:\TDF\pattern_execution\execution_dlog\dft_run_2021-12-02"
     post = PostProcess()
     exclude_chips = []
     post.dlog_csv_post_process(base_dir, runs, output_dir, exclude_chips)
