@@ -1,0 +1,38 @@
+{
+  "rev": "r2p1",
+  "chip_version": "waipio",
+  "py_log_name": "r2p1_tdf.log",
+  "py_log_path": "G:\\TDF\\py_log",
+  "pattern_category": "TDF",
+  "vector_type": "PROD",
+  "dest": "G:\\TDF\\New_folder",
+  "copy_zip": "n",
+  "convert_velocity": "y",
+  "generate_pats": "n",
+  "par_vector_path_r1": "\\\\qctdfsrt\\prj\\qct\\chips\\waipio\\sandiego\\test\\vcd\\r2p1_sec5lpe\\tester_vcd",
+  "map_path": "G:\\TDF\\r2p1_tdf.csv",
+  "velocity_dft_cfg_path": "\\\\qctdfsrt\\prj\\vlsi\\vetch_pst\\c_weicya\\ev100\\seed_files\\velocity_cfg\\waipio\\waipio_WY_dft_universal_v1.cfg",
+  "patch_timesets_path": "\\\\qctdfsrt\\prj\\vlsi\\vetch_pst\\c_weicya\\ev100\\seed_files\\patch_files\\waipio\\patch_timesets.txt",
+  "patch_timesets_50mhz_path": "\\\\qctdfsrt\\prj\\vlsi\\vetch_pst\\c_weicya\\ev100\\seed_files\\patch_files\\lahaina\\patch_timesets_50MHz.txt",
+  "enable_del_zip": false,
+  "blocks": [
+    "TDF-ATPG-MODEM"
+  ],
+  "log_name": "r2p1_tdf",
+  "conversion_log_csv_path": "G:\\TDF\\conversion_log",
+  "lim": 10,
+  "pin_group": "ALL_PINS",
+  "freq_modes": [
+    "LSVS",
+    "NOM",
+    "SVS",
+    "SVSL1",
+    "TUR",
+    "TURL1",
+    "TURL3"
+  ],
+  "enable_cyc_cnt": 1,
+  "list_dirs_exclude": [
+    ""
+  ]
+}
